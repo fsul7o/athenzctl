@@ -19,6 +19,20 @@ import (
 
 // New returns the `patch` command.
 func New(opts *cliopts.Options) *cobra.Command {
+	kindFlags := cliopts.KindFlagSpec{
+		Common: []string{"audit-ref"},
+		ByKind: map[resource.Kind][]string{
+			resource.KindRole:          {},
+			resource.KindPolicy:        {},
+			resource.KindPolicyVersion: {},
+			resource.KindService:       {},
+			resource.KindGroup:         {},
+			resource.KindDomainMeta:    {},
+			resource.KindRoleMeta:      {},
+			resource.KindGroupMeta:     {},
+			resource.KindQuota:         {},
+		},
+	}
 	cmd := &cobra.Command{
 		Use:   "patch KIND [NAME] KEY=VALUE [KEY=VALUE ...]",
 		Short: "Update specific fields of an Athenz resource from the command line",
@@ -44,6 +58,9 @@ Examples:
 			kindStr := args[0]
 			kind, err := resource.Parse(kindStr)
 			if err != nil {
+				return err
+			}
+			if err := cliopts.ValidateKindFlags(cmd, "patch", kind, kindFlags); err != nil {
 				return err
 			}
 
@@ -155,6 +172,7 @@ Examples:
 		},
 	}
 	cmd.Flags().String("audit-ref", "", "audit reference message")
+	cliopts.SetKindAwareHelp(cmd, kindFlags)
 	return cmd
 }
 

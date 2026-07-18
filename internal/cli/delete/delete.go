@@ -15,6 +15,21 @@ import (
 
 // New returns the `delete` command.
 func New(opts *cliopts.Options) *cobra.Command {
+	kindFlags := cliopts.KindFlagSpec{
+		Common: []string{"audit-ref"},
+		ByKind: map[resource.Kind][]string{
+			resource.KindDomain:         {"parent", "user"},
+			resource.KindRole:           {},
+			resource.KindPolicy:         {},
+			resource.KindService:        {},
+			resource.KindGroup:          {},
+			resource.KindMembership:     {"role", "group", "member"},
+			resource.KindServiceKey:     {},
+			resource.KindDomainTemplate: {},
+			resource.KindQuota:          {},
+			resource.KindPolicyVersion:  {},
+		},
+	}
 	cmd := &cobra.Command{
 		Use:   "delete KIND [NAME] [flags]",
 		Short: "Delete an Athenz resource",
@@ -22,6 +37,9 @@ func New(opts *cliopts.Options) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			kind, err := resource.Parse(args[0])
 			if err != nil {
+				return err
+			}
+			if err := cliopts.ValidateKindFlags(cmd, "delete", kind, kindFlags); err != nil {
 				return err
 			}
 			zc, err := opts.ZMSClient()
@@ -207,6 +225,7 @@ func New(opts *cliopts.Options) *cobra.Command {
 	cmd.Flags().String("role", "", "role name (for KIND=membership)")
 	cmd.Flags().String("group", "", "group name (for KIND=membership)")
 	cmd.Flags().String("member", "", "principal to remove (for KIND=membership)")
+	cliopts.SetKindAwareHelp(cmd, kindFlags)
 	return cmd
 }
 

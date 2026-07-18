@@ -14,6 +14,24 @@ import (
 
 // New returns the `get` cobra command.
 func New(opts *cliopts.Options) *cobra.Command {
+	kindFlags := cliopts.KindFlagSpec{
+		ByKind: map[resource.Kind][]string{
+			resource.KindDomain:         {},
+			resource.KindDomainMeta:     {},
+			resource.KindRole:           {},
+			resource.KindRoleMeta:       {},
+			resource.KindPolicy:         {},
+			resource.KindPolicyVersion:  {},
+			resource.KindService:        {},
+			resource.KindServiceKey:     {},
+			resource.KindTemplate:       {},
+			resource.KindDomainTemplate: {},
+			resource.KindQuota:          {},
+			resource.KindGroup:          {},
+			resource.KindGroupMeta:      {},
+			resource.KindMembership:     {"role", "group", "pending", "principal"},
+		},
+	}
 	cmd := &cobra.Command{
 		Use:   "get KIND [NAME]",
 		Short: "Display one or many Athenz resources",
@@ -27,6 +45,9 @@ membership(s), template(s), domain-template(s), quota.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			kind, err := resource.Parse(args[0])
 			if err != nil {
+				return err
+			}
+			if err := cliopts.ValidateKindFlags(cmd, "get", kind, kindFlags); err != nil {
 				return err
 			}
 			format, err := opts.Format()
@@ -129,6 +150,7 @@ membership(s), template(s), domain-template(s), quota.`,
 	cmd.Flags().String("group", "", "group name to query (only for KIND=membership)")
 	cmd.Flags().Bool("pending", false, "list pending membership requests in the current domain (only for KIND=membership)")
 	cmd.Flags().String("principal", "", "filter pending membership by approving principal (only with --pending)")
+	cliopts.SetKindAwareHelp(cmd, kindFlags)
 	return cmd
 }
 

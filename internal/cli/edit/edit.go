@@ -21,6 +21,20 @@ import (
 
 // New returns the `edit` command.
 func New(opts *cliopts.Options) *cobra.Command {
+	kindFlags := cliopts.KindFlagSpec{
+		Common: []string{"audit-ref"},
+		ByKind: map[resource.Kind][]string{
+			resource.KindDomainMeta:    {},
+			resource.KindQuota:         {},
+			resource.KindRole:          {},
+			resource.KindPolicy:        {},
+			resource.KindGroup:         {},
+			resource.KindRoleMeta:      {},
+			resource.KindGroupMeta:     {},
+			resource.KindPolicyVersion: {},
+			resource.KindService:       {},
+		},
+	}
 	cmd := &cobra.Command{
 		Use:   "edit KIND [NAME]",
 		Short: "Edit an Athenz resource in $EDITOR (fetch, edit, PUT)",
@@ -40,6 +54,9 @@ so both forms are equivalent:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			kind, err := resource.Parse(args[0])
 			if err != nil {
+				return err
+			}
+			if err := cliopts.ValidateKindFlags(cmd, "edit", kind, kindFlags); err != nil {
 				return err
 			}
 			name := ""
@@ -95,6 +112,7 @@ so both forms are equivalent:
 		},
 	}
 	cmd.Flags().String("audit-ref", "", "audit reference message")
+	cliopts.SetKindAwareHelp(cmd, kindFlags)
 	return cmd
 }
 

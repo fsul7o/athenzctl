@@ -18,6 +18,24 @@ import (
 
 // New returns the `describe` command.
 func New(opts *cliopts.Options) *cobra.Command {
+	kindFlags := cliopts.KindFlagSpec{
+		ByKind: map[resource.Kind][]string{
+			resource.KindDomain:         {},
+			resource.KindDomainMeta:     {},
+			resource.KindRole:           {},
+			resource.KindRoleMeta:       {},
+			resource.KindPolicy:         {},
+			resource.KindPolicyVersion:  {},
+			resource.KindService:        {},
+			resource.KindServiceKey:     {},
+			resource.KindGroup:          {},
+			resource.KindGroupMeta:      {},
+			resource.KindMembership:     {"role", "group"},
+			resource.KindTemplate:       {},
+			resource.KindDomainTemplate: {},
+			resource.KindQuota:          {},
+		},
+	}
 	cmd := &cobra.Command{
 		Use:   "describe KIND [NAME]",
 		Short: "Show detailed information about a single Athenz resource",
@@ -34,6 +52,9 @@ principal.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			kind, err := resource.Parse(args[0])
 			if err != nil {
+				return err
+			}
+			if err := cliopts.ValidateKindFlags(cmd, "describe", kind, kindFlags); err != nil {
 				return err
 			}
 			name := ""
@@ -134,6 +155,7 @@ principal.`,
 	}
 	cmd.Flags().String("role", "", "role name to query (only for KIND=membership)")
 	cmd.Flags().String("group", "", "group name to query (only for KIND=membership)")
+	cliopts.SetKindAwareHelp(cmd, kindFlags)
 	return cmd
 }
 
