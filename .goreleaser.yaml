@@ -55,25 +55,4 @@ checksum:
   name_template: "checksums.txt"
 
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
-      - "^chore:"
-
-release:
-  draft: true
-
-brews:
-  - name: athenzctl
-    repository:
-      owner: fsul7o
-      name: homebrew-athenzctl
-    description: "Unified kubectl-style CLI for Athenz"
-    homepage: "https://github.com/fsul7o/athenzctl"
-    license: "Apache-2.0"
-    install: |
-      bin.install "athenzctl"
-    test: |
-      system "#{bin}/athenzctl", "version"
+  use: github
