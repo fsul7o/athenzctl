@@ -37,10 +37,12 @@ jobs:
 
   e2e:
     name: End-to-end tests
+    needs: unit
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
       CI: "true"
+      DOCKER_REGISTRY_URL: ghcr.io
 
     steps:
       - name: Check out repository
