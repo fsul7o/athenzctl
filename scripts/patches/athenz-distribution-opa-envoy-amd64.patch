@@ -1,0 +1,11 @@
+--- a/Makefile
++++ b/Makefile
+@@ -426,7 +426,7 @@ load-docker-images-external:
+ 	docker pull $(DOCKERIO_REGISTRY)/ghostunnel/ghostunnel:latest
+ 	docker pull $(DOCKERIO_REGISTRY)/cfssl/cfssl:latest
+ 	docker pull $(DOCKERIO_REGISTRY)/openpolicyagent/kube-mgmt:latest
+-	docker pull $(DOCKERIO_REGISTRY)/openpolicyagent/opa:latest-envoy
++	docker pull --platform linux/amd64 $(DOCKERIO_REGISTRY)/openpolicyagent/opa:latest-envoy
+ 	docker pull $(DOCKERIO_REGISTRY)/openpolicyagent/opa:latest-static
+ 	docker pull $(DOCKERIO_REGISTRY)/openpolicyagent/opa:0.66.0-static
+ 	docker pull $(DOCKERIO_REGISTRY)/portainer/kubectl-shell:latest

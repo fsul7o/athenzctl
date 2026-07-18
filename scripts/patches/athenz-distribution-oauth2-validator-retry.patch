@@ -1,0 +1,43 @@
+--- a/kubernetes/athenz-oauth2/Makefile
++++ b/kubernetes/athenz-oauth2/Makefile
+@@ -93,17 +93,29 @@
+ 			-d email \
+ 			set-external-member-validator \
+ 			com.yahoo.athenz.auth.impl.EmailClaimExternalMemberValidator
+-	sleep 1
+-	kubectl -n athenz exec deployment/athenz-cli -it -- \
+-		zms-cli \
+-			-z https://athenz-zms-server.athenz:4443/zms/v1 \
+-			-key /var/run/athenz/athenz_admin.private.pem \
+-			-cert /var/run/athenz/athenz_admin.cert.pem \
+-			-c /etc/ssl/certs/ca-certificates.crt \
+-			-d email \
+-			add-member \
+-			admin \
+-			"email:ext.athenz_admin@athenz.io" "email:ext.athenz_user@athenz.io"
++	@# ZMS only picks up a domain's external-member-validator on its
++	@# periodic refresh (athenz.zms.external_member_validator_frequency_minutes,
++	@# 1 minute in this distribution's zms.properties) -- a fixed-rate timer
++	@# started at ZMS process startup, not triggered by the write above. A
++	@# short fixed sleep races that timer, so poll add-member until ZMS
++	@# reports the validator is available (or give up after ~2 minutes).
++	for i in $$(seq 1 24); do \
++		kubectl -n athenz exec deployment/athenz-cli -it -- \
++			zms-cli \
++				-z https://athenz-zms-server.athenz:4443/zms/v1 \
++				-key /var/run/athenz/athenz_admin.private.pem \
++				-cert /var/run/athenz/athenz_admin.cert.pem \
++				-c /etc/ssl/certs/ca-certificates.crt \
++				-d email \
++				add-member \
++				admin \
++				"email:ext.athenz_admin@athenz.io" "email:ext.athenz_user@athenz.io" \
++		&& exit 0; \
++		echo "external member validator not yet active, retrying in 5s ..." >&2; \
++		sleep 5; \
++	done; \
++	echo "external member validator for domain email never became available" >&2; \
++	exit 1
+ 
+ test-athenz-oauth2:
+ 	WAITING_TIMEOUT=60s; \
