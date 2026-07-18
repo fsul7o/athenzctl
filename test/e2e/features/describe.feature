@@ -24,4 +24,13 @@ Feature: athenzctl describe
       | group         | e2e-group         |              |
       | group-meta    | e2e-group         |              |
       | membership    | user.athenz_admin | --role admin |
+      | template      | instance_provider |              |
+      | domain-template|                  |              |
       | quota         |                   |              |
+
+  Scenario: describe a group membership
+    Given a group "describe-group" exists in domain "$DOMAIN"
+    When I run athenzctl "create membership -d $DOMAIN --group describe-group --member user.describe-group"
+    Then the command should succeed
+    When I run athenzctl "describe membership user.describe-group -d $DOMAIN --group describe-group"
+    Then the command should succeed

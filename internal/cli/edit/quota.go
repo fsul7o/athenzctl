@@ -33,6 +33,7 @@ func editQuota(zc *zms.ZMSClient, domain, auditRef string) error {
 	if changed, err := editYAML(orig, edited, "quota-"+domain, QuotaWhitelist); err != nil || !changed {
 		return err
 	}
+	edited.Name = zms.DomainName(domain)
 	if err := zc.PutQuota(zms.DomainName(domain), auditRef, edited); err != nil {
 		return cliopts.WrapErr(err)
 	}

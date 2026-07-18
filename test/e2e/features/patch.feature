@@ -8,7 +8,7 @@ Feature: athenzctl patch
 
   Scenario: patch role
     Given a role "role1" exists in domain "$DOMAIN"
-    When I run athenzctl "patch role role1 -d $DOMAIN description=patched"
+    When I run athenzctl "patch role role1 -d $DOMAIN --audit-ref patch-audit description=patched"
     Then the command should succeed
 
   Scenario: patch role-meta
@@ -37,4 +37,14 @@ Feature: athenzctl patch
 
   Scenario: patch quota
     When I run athenzctl "patch quota -d $DOMAIN role=100 policy=200"
+    Then the command should succeed
+
+  Scenario: patch policyversion
+    Given "policyversion" prerequisites exist
+    When I run athenzctl "patch policyversion e2e-policy:v1 -d $DOMAIN --audit-ref patch-audit active=true"
+    Then the command should succeed
+
+  Scenario: patch group
+    Given a group "grp1" exists in domain "$DOMAIN"
+    When I run athenzctl "patch group grp1 -d $DOMAIN --audit-ref patch-audit description=patched"
     Then the command should succeed

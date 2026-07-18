@@ -25,9 +25,21 @@ Feature: athenzctl get
       | group         | e2e-group         |              |
       | group-meta    | e2e-group         |              |
       | membership    | user.athenz_admin | --role admin |
+      | domain-template|                  |              |
       | quota         |                   |              |
 
   Scenario: get template
     # Uses the "instance_provider" template shipped by the athenz-distribution default deployment.
     When I run athenzctl "get template instance_provider -o yaml"
     Then the command should succeed
+
+  Scenario: get membership with group and pending filters
+    Given a group "readers" exists in domain "$DOMAIN"
+    When I run athenzctl "create membership -d $DOMAIN --group readers --member user.groupmember"
+    Then the command should succeed
+    When I run athenzctl "get membership user.groupmember -d $DOMAIN --group readers -o yaml"
+    Then the command should succeed
+    And stdout should be valid yaml
+    When I run athenzctl "get membership -d $DOMAIN --pending --principal user.athenz_admin -o yaml"
+    Then the command should succeed
+    And stdout should be valid yaml
