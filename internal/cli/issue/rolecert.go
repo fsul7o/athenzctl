@@ -173,17 +173,22 @@ calling ZTS.`,
 			return writePEM(cmd, outPath, certificate)
 		},
 	}
+	// flagDefaults seeds the flag help text with any build-time (ldflags -X)
+	// overrides so `--help` reflects the same defaults resolveCertificateDefaults
+	// applies at run time. Errors here (a malformed built-in override) surface
+	// again, properly, when the command actually runs.
+	flagDefaults, _ := buildCertificateDefaults(roleCertKind)
 	cmd.Flags().StringVar(&roleDomain, "role-domain", "", "role domain (required)")
 	cmd.Flags().StringVar(&roleName, "role-name", "", "role name in --role-domain (required)")
 	cmd.Flags().StringVar(&service, "service", "", "caller service name (default: extracted from context cert CN)")
 	cmd.Flags().StringVar(&roleKeyFile, "role-key-file", "", "role cert private key file (default: context service key)")
-	cmd.Flags().StringVar(&dnsDomain, "dns-domain", "", "DNS domain suffix to include in the CSR SAN (required unless configured)")
-	cmd.Flags().StringVar(&subjC, "subj-c", "US", "CSR Subject Country")
-	cmd.Flags().StringVar(&subjP, "subj-p", "", "CSR Subject Province")
-	cmd.Flags().StringVar(&subjO, "subj-o", "Oath Inc.", "CSR Subject Organization")
-	cmd.Flags().StringVar(&subjOU, "subj-ou", "Athenz", "CSR Subject OrganizationalUnit")
-	cmd.Flags().BoolVar(&spiffe, "spiffe", true, "include SPIFFE URI in CSR SAN")
-	cmd.Flags().StringVar(&spiffeTrustDomain, "spiffe-trust-domain", "", "SPIFFE trust domain")
+	cmd.Flags().StringVar(&dnsDomain, "dns-domain", flagDefaults.dnsDomain, "DNS domain suffix to include in the CSR SAN (required unless configured)")
+	cmd.Flags().StringVar(&subjC, "subj-c", flagDefaults.subjectCountry, "CSR Subject Country")
+	cmd.Flags().StringVar(&subjP, "subj-p", flagDefaults.subjectProvince, "CSR Subject Province")
+	cmd.Flags().StringVar(&subjO, "subj-o", flagDefaults.subjectOrganization, "CSR Subject Organization")
+	cmd.Flags().StringVar(&subjOU, "subj-ou", flagDefaults.subjectOrganizationalUnit, "CSR Subject OrganizationalUnit")
+	cmd.Flags().BoolVar(&spiffe, "spiffe", flagDefaults.spiffe, "include SPIFFE URI in CSR SAN")
+	cmd.Flags().StringVar(&spiffeTrustDomain, "spiffe-trust-domain", flagDefaults.spiffeTrustDomain, "SPIFFE trust domain")
 	cmd.Flags().StringVar(&ip, "ip", "", "IP address to include in CSR SAN")
 	cmd.Flags().StringVar(&oldRoleCertPath, "old-role-cert", "", "path to previous role cert PEM (sent as PrevCertNotBefore/NotAfter)")
 	cmd.Flags().BoolVar(&csrOnly, "csr", false, "print the generated CSR and exit")
