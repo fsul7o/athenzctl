@@ -18,9 +18,22 @@ Feature: athenzctl issue (ZTS credentials)
     And stdout should be valid json
     And stdout should contain "access_token"
 
-  Scenario: issue an access token with proxy and authorization details
-    When I run athenzctl "issue accesstoken -d sys.auth --role admin --proxy-for-principal user.athenz_admin --authorization-details {} -o json"
-    Then the command should fail with "not authorized for proxy access token request"
+  Scenario: issue an access token with proxy for principal
+    # user.athenz_admin is listed in ZTS's athenz.zts.authorized_proxy_users
+    # config (see scripts/patches/athenz-distribution-zts-authorized-proxy-users.patch),
+    # so it is allowed to request a token proxied on its own behalf.
+    When I run athenzctl "issue accesstoken -d sys.auth --role admin --proxy-for-principal user.athenz_admin -o json"
+    Then the command should succeed
+    And stdout should be valid json
+    And stdout should contain "access_token"
+
+  Scenario: issue an access token with an unauthorized authorization-details request
+    # sys.auth:role.admin has no configured AuthzDetailsEntity and this e2e
+    # stack has no system-wide authorization details configured, so any
+    # non-empty authorization_details value is rejected regardless of the
+    # proxy-for-principal check above.
+    When I run athenzctl "issue accesstoken -d sys.auth --role admin --authorization-details {} -o json"
+    Then the command should fail with "Authorization Details not valid for this request"
 
   Scenario: issue rolecert
     # user.athenz_admin is a member of sys.auth:role.admin via bootstrap, so
