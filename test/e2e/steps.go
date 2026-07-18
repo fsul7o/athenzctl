@@ -8,6 +8,7 @@ package e2e
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AthenZ/athenz/clients/go/zms"
 	"github.com/cucumber/godog"
 	"gopkg.in/yaml.v3"
 
@@ -30,13 +32,15 @@ printf '\n# e2e-edit-touch\n' >> "$1"
 `
 
 type world struct {
-	stdout  *bytes.Buffer
-	stderr  *bytes.Buffer
-	lastErr error
-	domain  string // scenario-scoped unique
-	tempDir string
-	vars    map[string]string
-	ctxName string // per-scenario athenzctl context override
+	stdout        *bytes.Buffer
+	stderr        *bytes.Buffer
+	lastErr       error
+	domain        string // scenario-scoped unique
+	tempDir       string
+	vars          map[string]string
+	ctxName       string // per-scenario athenzctl context override
+	configContext string
+	userDomains   []string
 }
 
 func newWorld(t string) *world {
@@ -72,6 +76,7 @@ func (w *world) run(args []string) error {
 	full := append([]string{"--config", cfg, "--context", ctxName}, expanded...)
 
 	root := cli.NewRootCmd()
+	recordCoverage(root, full)
 	root.SetOut(w.stdout)
 	root.SetErr(w.stderr)
 	root.SetArgs(full)
@@ -134,6 +139,12 @@ func (w *world) freshStack() error {
 
 func (w *world) aUniqueDomain(base string) error {
 	w.domain = fmt.Sprintf("%s-%d", base, time.Now().UnixNano())
+	return nil
+}
+
+func (w *world) aUniqueContext(base string) error {
+	w.configContext = fmt.Sprintf("%s-%d", base, time.Now().UnixNano())
+	w.vars["CONTEXT"] = w.configContext
 	return nil
 }
 
@@ -307,7 +318,11 @@ func (w *world) stdoutIsValidPEM() error {
 // any leaked "e2e-*" domains from prior interrupted runs so the same athenz
 // stack can be reused across many invocations of `make e2e`.
 func InitializeTestSuite(ctx *godog.TestSuiteContext) {
-	ctx.BeforeSuite(func() { sweepLeakedDomains() })
+	ctx.BeforeSuite(func() {
+		initializeCoverage()
+		sweepLeakedDomains()
+	})
+	ctx.AfterSuite(func() { finalizeCoverage() })
 }
 
 func InitializeScenario(ctx *godog.ScenarioContext) {
@@ -326,8 +341,11 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 			if cc, err := cfg.Current(); err == nil {
 				w.vars["ADMIN_KEY"] = cc.Key
 				w.vars["ADMIN_CERT"] = cc.Cert
+				w.vars["ADMIN_CA"] = cc.CACert
 			}
 		}
+		w.vars["TEMP_DIR"] = dir
+		w.vars["PUBLIC_KEY"] = generatedTestPublicKeyYBase64()
 		// Fake editor for `athenzctl edit` scenarios.
 		editorPath := dir + "/fake-editor.sh"
 		if err := os.WriteFile(editorPath, []byte(fakeEditorScript), 0o755); err != nil {
@@ -342,9 +360,18 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 			return c, nil
 		}
 		os.Unsetenv("ATHENZCTL_EDITOR")
-		if w.domain != "" {
-			if zc, zerr := zmsClient(); zerr == nil {
+		if zc, zerr := zmsClient(); zerr == nil {
+			if w.domain != "" {
 				_ = cascadeDeleteDomain(zc, w.domain)
+			}
+			for _, user := range w.userDomains {
+				_ = zc.DeleteUserDomain(zms.SimpleName(user), "", "")
+			}
+		}
+		if w.configContext != "" {
+			path := os.Getenv("ATHENZCTL_E2E_CONFIG")
+			if e2eConfig, loadErr := config.Load(path); loadErr == nil && e2eConfig.Remove(w.configContext) {
+				_ = config.Save(path, e2eConfig)
 			}
 		}
 		if w.tempDir != "" {
@@ -356,6 +383,20 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	// Givens.
 	ctx.Step(`^a fresh athenz stack$`, func() error { return w.freshStack() })
 	ctx.Step(`^a unique domain "([^"]+)"$`, func(base string) error { return w.aUniqueDomain(base) })
+	ctx.Step(`^a unique context "([^"]+)"$`, func(base string) error { return w.aUniqueContext(base) })
+	ctx.Step(`^a unique user "([^"]+)"$`, func(base string) error {
+		name := fmt.Sprintf("%s-%d", base, time.Now().UnixNano())
+		w.vars["USER"] = name
+		w.userDomains = append(w.userDomains, name)
+		return nil
+	})
+	ctx.Step(`^a public key file "([^"]+)" exists$`, func(path string) error {
+		path = w.expand(path)
+		if err := os.WriteFile(path, []byte(generatedTestPublicKey), 0o600); err != nil {
+			return fmt.Errorf("write public key %q: %w", path, err)
+		}
+		return nil
+	})
 	ctx.Step(`^a domain "([^"]+)" exists$`, func(name string) error { return w.aDomainExists(name) })
 	ctx.Step(`^a role "([^"]+)" exists in domain "([^"]+)"$`, func(r, d string) error { return w.aRoleExists(r, d) })
 	ctx.Step(`^a service "([^"]+)" exists in domain "([^"]+)"$`, func(s, d string) error { return w.aServiceExists(s, d) })
@@ -380,6 +421,31 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the command should succeed$`, func() error { return w.shouldSucceed() })
 	ctx.Step(`^the command should fail with "([^"]+)"$`, func(s string) error { return w.shouldFailWith(s) })
 	ctx.Step(`^stdout should contain "([^"]+)"$`, func(s string) error { return w.stdoutContains(w.expand(s)) })
+	ctx.Step(`^stdout should not contain "([^"]+)"$`, func(s string) error {
+		expanded := w.expand(s)
+		if strings.Contains(w.stdout.String(), expanded) {
+			return fmt.Errorf("expected stdout not to contain %q; got:\n%s", expanded, w.stdout.String())
+		}
+		return nil
+	})
+	ctx.Step(`^the file "([^"]+)" should exist$`, func(path string) error {
+		path = w.expand(path)
+		if _, err := os.Stat(path); err != nil {
+			return fmt.Errorf("expected file %q to exist: %w", path, err)
+		}
+		return nil
+	})
+	ctx.Step(`^the file "([^"]+)" should contain "([^"]+)"$`, func(path, content string) error {
+		path = w.expand(path)
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("read file %q: %w", path, err)
+		}
+		if !strings.Contains(string(data), w.expand(content)) {
+			return fmt.Errorf("expected file %q to contain %q; got:\n%s", path, content, data)
+		}
+		return nil
+	})
 	ctx.Step(`^stdout should be valid (json|yaml)$`, func(fmt string) error { return w.stdoutIsValid(fmt) })
 	ctx.Step(`^stdout should be a valid PEM certificate$`, func() error { return w.stdoutIsValidPEM() })
 }
@@ -395,3 +461,8 @@ xf9Qw+9wcm4A/ZubDBSCCTGmz0dtC4Lqb1RM6XjBqoZq6DZQmm8mYZG9J1O88Rlq
 5cU2VrpFxD1DnbBEXVSJyJcXe1eGeXcqbtRr8bpqi3sFcSNvsHZ/qXY2/EEZzy14
 VwIDAQAB
 -----END PUBLIC KEY-----`
+
+func generatedTestPublicKeyYBase64() string {
+	const yBase64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._"
+	return base64.NewEncoding(yBase64Chars).WithPadding('-').EncodeToString([]byte(generatedTestPublicKey))
+}

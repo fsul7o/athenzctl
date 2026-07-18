@@ -14,3 +14,9 @@ Feature: athenzctl check
   Scenario: check resource enumerates admin's access
     When I run athenzctl "check resource --principal user.athenz_admin"
     Then the command should succeed
+
+  Scenario: check access with extended resource and enumerate with filters
+    When I run athenzctl "check access read $DOMAIN:resource* -d $DOMAIN --principal user.athenz_admin --ext"
+    Then the command should succeed
+    When I run athenzctl "check resource --principal user.athenz_admin --action read --role-filter readers"
+    Then the command should succeed

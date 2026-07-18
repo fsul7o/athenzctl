@@ -33,4 +33,7 @@ func TestFeatures(t *testing.T) {
 	if suite.Run() != 0 {
 		t.Fatal("godog suite failed")
 	}
+	if missing := coverageFailure(); missing != "" {
+		t.Fatalf("e2e coverage is incomplete:\n%s", missing)
+	}
 }

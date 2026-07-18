@@ -13,6 +13,7 @@ ATHENZ_DIST_DIR    := .local/athenz-distribution
 ATHENZ_DIST_REPO   := https://github.com/ctyano/athenz-distribution.git
 ATHENZ_DIST_PATCHES := $(wildcard $(PWD)/scripts/patches/athenz-distribution-*.patch)
 E2E_CONFIG         := $(PWD)/.local/e2e/config.yaml
+E2E_COVERAGE       ?= 1
 
 .PHONY: build test lint tidy install clean snapshot \
 	e2e-clone e2e-up e2e-down e2e e2e-focus e2e-sweep e2e-clean
@@ -67,11 +68,12 @@ e2e-down:
 
 e2e:
 	ATHENZCTL_E2E_CONFIG=$(E2E_CONFIG) \
+	ATHENZCTL_E2E_COVERAGE=$(E2E_COVERAGE) \
 	GODOG_TAGS=$${GODOG_TAGS:-~@skip} \
 	go test -tags=e2e -count=1 -v ./test/e2e/...
 
 e2e-focus:
-	GODOG_TAGS=$${GODOG_TAGS:-@focus} $(MAKE) e2e
+	GODOG_TAGS=$${GODOG_TAGS:-@focus} E2E_COVERAGE=0 $(MAKE) e2e
 
 e2e-sweep:
 	ATHENZCTL_E2E_CONFIG=$(E2E_CONFIG) \
