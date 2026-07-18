@@ -56,11 +56,7 @@ jobs:
           cluster_name: kind
 
       - name: Start Athenz test stack
-        run: >-
-          make
-          E2E_UP_TARGETS='deploy-kubernetes-crypki-softhsm use-kubernetes-crypki-softhsm
-          deploy-kubernetes-athenz check-kubernetes-athenz deploy-kubernetes-athenz-oauth2'
-          e2e-up
+        run: make e2e-up
 
       - name: Run E2E tests
         run: make e2e

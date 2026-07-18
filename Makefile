@@ -14,9 +14,6 @@ ATHENZ_DIST_REPO   := https://github.com/ctyano/athenz-distribution.git
 ATHENZ_DIST_PATCHES := $(wildcard $(PWD)/scripts/patches/athenz-distribution-*.patch)
 E2E_CONFIG         := $(PWD)/.local/e2e/config.yaml
 E2E_COVERAGE       ?= 1
-E2E_UP_TARGETS     ?= deploy-kubernetes-in-docker load-docker-images load-kubernetes-images \
-	deploy-kubernetes-crypki-softhsm use-kubernetes-crypki-softhsm \
-	deploy-kubernetes-athenz check-kubernetes-athenz deploy-kubernetes-athenz-oauth2
 
 .PHONY: build test lint tidy install clean snapshot \
 	e2e-clone e2e-up e2e-down e2e e2e-focus e2e-sweep e2e-clean
@@ -59,7 +56,10 @@ e2e-clone:
 	done
 
 e2e-up: e2e-clone
-	$(MAKE) -C $(ATHENZ_DIST_DIR) $(E2E_UP_TARGETS)
+	$(MAKE) -C $(ATHENZ_DIST_DIR) \
+		load-docker-images load-kubernetes-images \
+		deploy-kubernetes-crypki-softhsm use-kubernetes-crypki-softhsm \
+		deploy-kubernetes-athenz check-kubernetes-athenz deploy-kubernetes-athenz-oauth2
 	./scripts/e2e-bootstrap.sh $(ATHENZ_DIST_DIR) $(PWD)/.local/e2e
 
 e2e-down:
