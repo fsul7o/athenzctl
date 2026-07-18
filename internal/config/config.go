@@ -32,16 +32,38 @@ type Config struct {
 // server certificate — e.g. dialing https://localhost:4443 against a cert
 // whose SAN is athenz-zms-server. Leave empty in normal deployments.
 type Context struct {
-	Name          string      `yaml:"name"`
-	ZMSURL        string      `yaml:"zms-url,omitempty"`
-	ZTSURL        string      `yaml:"zts-url,omitempty"`
-	Cert          string      `yaml:"cert,omitempty"`            // path to PEM
-	Key           string      `yaml:"key,omitempty"`             // path to PEM
-	CACert        string      `yaml:"ca-cert,omitempty"`         // optional
-	ZMSServerName string      `yaml:"zms-server-name,omitempty"` // optional TLS ServerName override
-	ZTSServerName string      `yaml:"zts-server-name,omitempty"` // optional TLS ServerName override
-	AuthMode      string      `yaml:"auth-mode,omitempty"`       // "" or "mtls" (default), "exec"
-	Exec          *ExecConfig `yaml:"exec,omitempty"`
+	Name          string         `yaml:"name"`
+	ZMSURL        string         `yaml:"zms-url,omitempty"`
+	ZTSURL        string         `yaml:"zts-url,omitempty"`
+	Cert          string         `yaml:"cert,omitempty"`            // path to PEM
+	Key           string         `yaml:"key,omitempty"`             // path to PEM
+	CACert        string         `yaml:"ca-cert,omitempty"`         // optional
+	ZMSServerName string         `yaml:"zms-server-name,omitempty"` // optional TLS ServerName override
+	ZTSServerName string         `yaml:"zts-server-name,omitempty"` // optional TLS ServerName override
+	AuthMode      string         `yaml:"auth-mode,omitempty"`       // "" or "mtls" (default), "exec"
+	Exec          *ExecConfig    `yaml:"exec,omitempty"`
+	IssueDefaults *IssueDefaults `yaml:"issue-defaults,omitempty"`
+}
+
+// IssueDefaults contains optional defaults for the credential-issuing
+// commands. Service and role certificate defaults are intentionally separate
+// because their CSR conventions can differ between Athenz deployments.
+type IssueDefaults struct {
+	ServiceCert *CertificateDefaults `yaml:"servicecert,omitempty"`
+	RoleCert    *CertificateDefaults `yaml:"rolecert,omitempty"`
+}
+
+// CertificateDefaults contains optional CSR defaults for one certificate
+// issuing command. Spiffe is a pointer so an explicit false is distinguishable
+// from an omitted value.
+type CertificateDefaults struct {
+	DNSDomain                 string `yaml:"dns-domain,omitempty"`
+	SubjectCountry            string `yaml:"subj-c,omitempty"`
+	SubjectProvince           string `yaml:"subj-p,omitempty"`
+	SubjectOrganization       string `yaml:"subj-o,omitempty"`
+	SubjectOrganizationalUnit string `yaml:"subj-ou,omitempty"`
+	SpiffeTrustDomain         string `yaml:"spiffe-trust-domain,omitempty"`
+	Spiffe                    *bool  `yaml:"spiffe,omitempty"`
 }
 
 // ExecConfig names an external command that places a fresh Athenz user

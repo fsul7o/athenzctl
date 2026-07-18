@@ -26,22 +26,22 @@ import (
 // context client cert Subject CN if not overridden with --domain / --service.
 func newRoleCert(opts *cliopts.Options) *cobra.Command {
 	var (
-		roleDomain           string
-		roleName             string
-		roleDeprecated       string
-		service              string
-		roleKeyFile          string
-		dnsDomain            string
-		subjC, subjO, subjOU string
-		spiffe               bool
-		spiffeTrustDomain    string
-		ip                   string
-		oldRoleCertPath      string
-		csrOnly              bool
-		expiryTime           int
-		expiryMinsDeprecated int64
-		outPath              string
-		proxyForPrincipal    string
+		roleDomain                  string
+		roleName                    string
+		service                     string
+		roleKeyFile                 string
+		dnsDomain                   string
+		subjC, subjP, subjO, subjOU string
+		spiffe                      bool
+		spiffeTrustDomain           string
+		ip                          string
+		oldRoleCertPath             string
+		csrOnly                     bool
+		expiryTime                  int
+		outPath                     string
+		proxyForPrincipal           string
+		concatIntermediateCert      bool
+		caCertBundleName            string
 	)
 	cmd := &cobra.Command{
 		Use:   "rolecert",
@@ -56,12 +56,18 @@ The CSR is generated in-process from --role-key-file (defaulting to the
 context's service key). Pass --csr to print the CSR and exit without
 calling ZTS.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if roleName == "" && roleDeprecated != "" {
-				roleName = roleDeprecated
+			defaults, err := resolveCertificateDefaults(cmd, opts, roleCertKind)
+			if err != nil {
+				return err
 			}
-			if expiryTime == 0 && expiryMinsDeprecated > 0 {
-				expiryTime = int(expiryMinsDeprecated)
-			}
+			dnsDomain = defaults.dnsDomain
+			subjC = defaults.subjectCountry
+			subjP = defaults.subjectProvince
+			subjO = defaults.subjectOrganization
+			subjOU = defaults.subjectOrganizationalUnit
+			spiffe = defaults.spiffe
+			spiffeTrustDomain = defaults.spiffeTrustDomain
+
 			if roleDomain == "" {
 				return errors.New("issue rolecert requires --role-domain")
 			}
@@ -69,7 +75,7 @@ calling ZTS.`,
 				return errors.New("issue rolecert requires --role-name")
 			}
 			if dnsDomain == "" {
-				return errors.New("issue rolecert requires --dns-domain")
+				return errors.New("issue rolecert requires --dns-domain or a rolecert default")
 			}
 
 			ctx, err := opts.LoadContext()
@@ -117,12 +123,7 @@ calling ZTS.`,
 					spiffeURI = fmt.Sprintf("spiffe://%s/ra/%s", roleDomain, roleName)
 				}
 			}
-			subj := pkix.Name{
-				CommonName:         fmt.Sprintf("%s:role.%s", roleDomain, roleName),
-				OrganizationalUnit: []string{subjOU},
-				Organization:       []string{subjO},
-				Country:            []string{subjC},
-			}
+			subj := newCSRSubject(fmt.Sprintf("%s:role.%s", roleDomain, roleName), subjC, subjP, subjO, subjOU)
 			csrPEM, err := generateRoleCSR(signer, subj, host, principal, dnsDomain, ip, spiffeURI)
 			if err != nil {
 				return err
@@ -154,17 +155,31 @@ calling ZTS.`,
 			if err != nil {
 				return cliopts.WrapErr(err)
 			}
-			return writePEM(cmd, outPath, resp.X509Certificate)
+
+			certificate := resp.X509Certificate
+
+			if concatIntermediateCert {
+				_, caCert := pem.Decode([]byte(certificate))
+				if len(caCert) == 0 {
+					intermediateCertBundle, err := zc.GetCertificateAuthorityBundle(zts.SimpleName(caCertBundleName))
+					if err != nil || intermediateCertBundle == nil || intermediateCertBundle.Certs == "" {
+						return fmt.Errorf("GetCertificateAuthorityBundle failed for role certificate, err: %v", err)
+					}
+					intermediateCerts := intermediateCertBundle.Certs
+					certificate += intermediateCerts
+				}
+			}
+
+			return writePEM(cmd, outPath, certificate)
 		},
 	}
 	cmd.Flags().StringVar(&roleDomain, "role-domain", "", "role domain (required)")
 	cmd.Flags().StringVar(&roleName, "role-name", "", "role name in --role-domain (required)")
-	cmd.Flags().StringVar(&roleDeprecated, "role", "", "deprecated: use --role-name")
-	_ = cmd.Flags().MarkDeprecated("role", "use --role-name")
 	cmd.Flags().StringVar(&service, "service", "", "caller service name (default: extracted from context cert CN)")
 	cmd.Flags().StringVar(&roleKeyFile, "role-key-file", "", "role cert private key file (default: context service key)")
-	cmd.Flags().StringVar(&dnsDomain, "dns-domain", "", "DNS domain suffix to include in the CSR SAN (required)")
+	cmd.Flags().StringVar(&dnsDomain, "dns-domain", "", "DNS domain suffix to include in the CSR SAN (required unless configured)")
 	cmd.Flags().StringVar(&subjC, "subj-c", "US", "CSR Subject Country")
+	cmd.Flags().StringVar(&subjP, "subj-p", "", "CSR Subject Province")
 	cmd.Flags().StringVar(&subjO, "subj-o", "Oath Inc.", "CSR Subject Organization")
 	cmd.Flags().StringVar(&subjOU, "subj-ou", "Athenz", "CSR Subject OrganizationalUnit")
 	cmd.Flags().BoolVar(&spiffe, "spiffe", true, "include SPIFFE URI in CSR SAN")
@@ -173,10 +188,10 @@ calling ZTS.`,
 	cmd.Flags().StringVar(&oldRoleCertPath, "old-role-cert", "", "path to previous role cert PEM (sent as PrevCertNotBefore/NotAfter)")
 	cmd.Flags().BoolVar(&csrOnly, "csr", false, "print the generated CSR and exit")
 	cmd.Flags().IntVar(&expiryTime, "expiry-time", 0, "requested certificate lifetime in minutes (0 = server default)")
-	cmd.Flags().Int64Var(&expiryMinsDeprecated, "expiry-mins", 0, "deprecated: use --expiry-time")
-	_ = cmd.Flags().MarkDeprecated("expiry-mins", "use --expiry-time")
 	cmd.Flags().StringVar(&outPath, "out", "", "path to write the signed cert (default: stdout)")
 	cmd.Flags().StringVar(&proxyForPrincipal, "proxy-for-principal", "", "issue cert proxied on behalf of this principal")
+	cmd.Flags().BoolVar(&concatIntermediateCert, "concat-intermediate-cert", false, "append a CA bundle when the response does not include a certificate chain")
+	cmd.Flags().StringVar(&caCertBundleName, "cacert-bundle-name", "", "CA certificate bundle name used with --concat-intermediate-cert")
 	return cmd
 }
 
@@ -185,7 +200,7 @@ func writePEM(cmd *cobra.Command, outPath, pem string) error {
 		_, err := fmt.Fprint(cmd.OutOrStdout(), pem)
 		return err
 	}
-	return os.WriteFile(outPath, []byte(pem), 0o600)
+	return os.WriteFile(outPath, []byte(pem), 0o644)
 }
 
 func generateRoleCSR(signer *csrSigner, subj pkix.Name, host, principal, dnsDomain, ip, spiffeURI string) (string, error) {

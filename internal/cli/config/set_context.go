@@ -20,11 +20,25 @@ func newSetContext(opts *Options) *cobra.Command {
 		ztsServerName string
 		authMode      string
 		// exec fields
-		execCommand  string
-		execArgs     []string
-		execEnv      []string
-		execCertPath string
-		execKeyPath  string
+		execCommand            string
+		execArgs               []string
+		execEnv                []string
+		execCertPath           string
+		execKeyPath            string
+		serviceCertSubjC       string
+		serviceCertSubjP       string
+		serviceCertSubjO       string
+		serviceCertSubjOU      string
+		serviceCertSpiffe      bool
+		serviceCertTrustDomain string
+		serviceCertDNSDomain   string
+		roleCertSubjC          string
+		roleCertSubjP          string
+		roleCertSubjO          string
+		roleCertSubjOU         string
+		roleCertSpiffe         bool
+		roleCertTrustDomain    string
+		roleCertDNSDomain      string
 	)
 	cmd := &cobra.Command{
 		Use:   "set-context NAME",
@@ -65,6 +79,74 @@ func newSetContext(opts *Options) *cobra.Command {
 			}
 			if cmd.Flags().Changed("auth-mode") {
 				ctx.AuthMode = authMode
+			}
+
+			serviceCertChanged := anyFlagChanged(cmd,
+				"servicecert-subj-c", "servicecert-subj-p", "servicecert-subj-o", "servicecert-subj-ou",
+				"servicecert-spiffe", "servicecert-spiffe-trust-domain", "servicecert-dns-domain")
+			roleCertChanged := anyFlagChanged(cmd,
+				"rolecert-subj-c", "rolecert-subj-p", "rolecert-subj-o", "rolecert-subj-ou",
+				"rolecert-spiffe", "rolecert-spiffe-trust-domain", "rolecert-dns-domain")
+			if serviceCertChanged || roleCertChanged {
+				if ctx.IssueDefaults == nil {
+					ctx.IssueDefaults = &cfg.IssueDefaults{}
+				}
+			}
+			if serviceCertChanged {
+				if ctx.IssueDefaults.ServiceCert == nil {
+					ctx.IssueDefaults.ServiceCert = &cfg.CertificateDefaults{}
+				}
+				defaults := ctx.IssueDefaults.ServiceCert
+				if cmd.Flags().Changed("servicecert-subj-c") {
+					defaults.SubjectCountry = serviceCertSubjC
+				}
+				if cmd.Flags().Changed("servicecert-subj-p") {
+					defaults.SubjectProvince = serviceCertSubjP
+				}
+				if cmd.Flags().Changed("servicecert-subj-o") {
+					defaults.SubjectOrganization = serviceCertSubjO
+				}
+				if cmd.Flags().Changed("servicecert-subj-ou") {
+					defaults.SubjectOrganizationalUnit = serviceCertSubjOU
+				}
+				if cmd.Flags().Changed("servicecert-spiffe") {
+					value := serviceCertSpiffe
+					defaults.Spiffe = &value
+				}
+				if cmd.Flags().Changed("servicecert-spiffe-trust-domain") {
+					defaults.SpiffeTrustDomain = serviceCertTrustDomain
+				}
+				if cmd.Flags().Changed("servicecert-dns-domain") {
+					defaults.DNSDomain = serviceCertDNSDomain
+				}
+			}
+			if roleCertChanged {
+				if ctx.IssueDefaults.RoleCert == nil {
+					ctx.IssueDefaults.RoleCert = &cfg.CertificateDefaults{}
+				}
+				defaults := ctx.IssueDefaults.RoleCert
+				if cmd.Flags().Changed("rolecert-subj-c") {
+					defaults.SubjectCountry = roleCertSubjC
+				}
+				if cmd.Flags().Changed("rolecert-subj-p") {
+					defaults.SubjectProvince = roleCertSubjP
+				}
+				if cmd.Flags().Changed("rolecert-subj-o") {
+					defaults.SubjectOrganization = roleCertSubjO
+				}
+				if cmd.Flags().Changed("rolecert-subj-ou") {
+					defaults.SubjectOrganizationalUnit = roleCertSubjOU
+				}
+				if cmd.Flags().Changed("rolecert-spiffe") {
+					value := roleCertSpiffe
+					defaults.Spiffe = &value
+				}
+				if cmd.Flags().Changed("rolecert-spiffe-trust-domain") {
+					defaults.SpiffeTrustDomain = roleCertTrustDomain
+				}
+				if cmd.Flags().Changed("rolecert-dns-domain") {
+					defaults.DNSDomain = roleCertDNSDomain
+				}
 			}
 
 			// Ensure ctx.Exec exists if any exec-*  flag was set.
@@ -130,5 +212,28 @@ func newSetContext(opts *Options) *cobra.Command {
 	cmd.Flags().StringArrayVar(&execEnv, "exec-env", nil, "exec: KEY=VALUE environment variable to set for the exec command (repeatable, replaces the full map when set)")
 	cmd.Flags().StringVar(&execCertPath, "exec-cert-path", "", "exec: path the exec command writes the cert PEM to, read back after it exits")
 	cmd.Flags().StringVar(&execKeyPath, "exec-key-path", "", "exec: path the exec command writes the key PEM to, read back after it exits")
+	cmd.Flags().StringVar(&serviceCertSubjC, "servicecert-subj-c", "", "servicecert default CSR Subject Country")
+	cmd.Flags().StringVar(&serviceCertSubjP, "servicecert-subj-p", "", "servicecert default CSR Subject Province")
+	cmd.Flags().StringVar(&serviceCertSubjO, "servicecert-subj-o", "", "servicecert default CSR Subject Organization")
+	cmd.Flags().StringVar(&serviceCertSubjOU, "servicecert-subj-ou", "", "servicecert default CSR Subject OrganizationalUnit")
+	cmd.Flags().BoolVar(&serviceCertSpiffe, "servicecert-spiffe", true, "servicecert default: include SPIFFE URI in CSR SAN")
+	cmd.Flags().StringVar(&serviceCertTrustDomain, "servicecert-spiffe-trust-domain", "", "servicecert default SPIFFE trust domain")
+	cmd.Flags().StringVar(&serviceCertDNSDomain, "servicecert-dns-domain", "", "servicecert default DNS domain suffix")
+	cmd.Flags().StringVar(&roleCertSubjC, "rolecert-subj-c", "", "rolecert default CSR Subject Country")
+	cmd.Flags().StringVar(&roleCertSubjP, "rolecert-subj-p", "", "rolecert default CSR Subject Province")
+	cmd.Flags().StringVar(&roleCertSubjO, "rolecert-subj-o", "", "rolecert default CSR Subject Organization")
+	cmd.Flags().StringVar(&roleCertSubjOU, "rolecert-subj-ou", "", "rolecert default CSR Subject OrganizationalUnit")
+	cmd.Flags().BoolVar(&roleCertSpiffe, "rolecert-spiffe", true, "rolecert default: include SPIFFE URI in CSR SAN")
+	cmd.Flags().StringVar(&roleCertTrustDomain, "rolecert-spiffe-trust-domain", "", "rolecert default SPIFFE trust domain")
+	cmd.Flags().StringVar(&roleCertDNSDomain, "rolecert-dns-domain", "", "rolecert default DNS domain suffix")
 	return cmd
+}
+
+func anyFlagChanged(cmd *cobra.Command, names ...string) bool {
+	for _, name := range names {
+		if cmd.Flags().Changed(name) {
+			return true
+		}
+	}
+	return false
 }

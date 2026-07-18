@@ -35,11 +35,7 @@ func (o *Options) ResolvePath() (string, error) {
 
 // LoadContext resolves the current context (respecting --context override).
 func (o *Options) LoadContext() (*config.Context, error) {
-	path, err := o.ResolvePath()
-	if err != nil {
-		return nil, err
-	}
-	cfg, err := config.Load(path)
+	cfg, _, err := o.LoadConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -49,6 +45,43 @@ func (o *Options) LoadContext() (*config.Context, error) {
 	}
 	if name == "" {
 		return nil, errors.New("no context selected; run `athenzctl config use-context <name>` or pass --context")
+	}
+	ctx := cfg.Find(name)
+	if ctx == nil {
+		path, _ := o.ResolvePath()
+		return nil, fmt.Errorf("context %q not found in %s", name, path)
+	}
+	return ctx, nil
+}
+
+// LoadConfig loads the configuration file without requiring a selected
+// context. This lets CSR-only issue commands use built-in defaults when no
+// context has been configured yet.
+func (o *Options) LoadConfig() (*config.Config, string, error) {
+	path, err := o.ResolvePath()
+	if err != nil {
+		return nil, "", err
+	}
+	cfg, err := config.Load(path)
+	if err != nil {
+		return nil, "", err
+	}
+	return cfg, path, nil
+}
+
+// LoadSelectedContext returns the selected context when one is configured.
+// It returns nil without an error when no context is selected.
+func (o *Options) LoadSelectedContext() (*config.Context, error) {
+	cfg, path, err := o.LoadConfig()
+	if err != nil {
+		return nil, err
+	}
+	name := o.ContextName
+	if name == "" {
+		name = cfg.CurrentContext
+	}
+	if name == "" {
+		return nil, nil
 	}
 	ctx := cfg.Find(name)
 	if ctx == nil {

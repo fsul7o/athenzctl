@@ -1,0 +1,15 @@
+--- a/kubernetes/athenz-zts-server/kustomize/conf/zts.properties
++++ b/kubernetes/athenz-zts-server/kustomize/conf/zts.properties
+@@ -208,7 +208,11 @@
+ #athenz.zts.instance_token_timeout=86400
+ 
+ # Comma separated list of authorized proxy principals
+-#athenz.zts.authorized_proxy_users=
++#
++# athenzctl's e2e suite exercises the accesstoken --proxy-for-principal flow
++# using the bootstrap admin identity (user.athenz_admin), so it must be
++# listed here for that scenario to succeed instead of returning a 403.
++athenz.zts.authorized_proxy_users=user.athenz_admin
+ 
+ # Specifies the service name that the ostk instance documents are
+ # signed with.

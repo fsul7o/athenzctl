@@ -29,6 +29,20 @@ builds:
       - -X github.com/fsul7o/athenzctl/internal/version.Version={{.Version}}
       - -X github.com/fsul7o/athenzctl/internal/version.Commit={{.ShortCommit}}
       - -X github.com/fsul7o/athenzctl/internal/version.Date={{.Date}}
+      - -X 'github.com/fsul7o/athenzctl/internal/cli/issue.ServiceCertDefaultDNSDomain={{ .Env.ATHENZCTL_ISSUE_DEFAULT_SERVICECERT_DNS_DOMAIN }}'
+      - -X 'github.com/fsul7o/athenzctl/internal/cli/issue.ServiceCertDefaultSubjectCountry={{ .Env.ATHENZCTL_ISSUE_DEFAULT_SERVICECERT_SUBJ_C }}'
+      - -X 'github.com/fsul7o/athenzctl/internal/cli/issue.ServiceCertDefaultSubjectProvince={{ .Env.ATHENZCTL_ISSUE_DEFAULT_SERVICECERT_SUBJ_P }}'
+      - -X 'github.com/fsul7o/athenzctl/internal/cli/issue.ServiceCertDefaultSubjectOrganization={{ .Env.ATHENZCTL_ISSUE_DEFAULT_SERVICECERT_SUBJ_O }}'
+      - -X 'github.com/fsul7o/athenzctl/internal/cli/issue.ServiceCertDefaultSubjectOrganizationalUnit={{ .Env.ATHENZCTL_ISSUE_DEFAULT_SERVICECERT_SUBJ_OU }}'
+      - -X 'github.com/fsul7o/athenzctl/internal/cli/issue.ServiceCertDefaultSpiffe={{ .Env.ATHENZCTL_ISSUE_DEFAULT_SERVICECERT_SPIFFE }}'
+      - -X 'github.com/fsul7o/athenzctl/internal/cli/issue.ServiceCertDefaultSpiffeTrustDomain={{ .Env.ATHENZCTL_ISSUE_DEFAULT_SERVICECERT_SPIFFE_TRUST_DOMAIN }}'
+      - -X 'github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultDNSDomain={{ .Env.ATHENZCTL_ISSUE_DEFAULT_ROLECERT_DNS_DOMAIN }}'
+      - -X 'github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultSubjectCountry={{ .Env.ATHENZCTL_ISSUE_DEFAULT_ROLECERT_SUBJ_C }}'
+      - -X 'github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultSubjectProvince={{ .Env.ATHENZCTL_ISSUE_DEFAULT_ROLECERT_SUBJ_P }}'
+      - -X 'github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultSubjectOrganization={{ .Env.ATHENZCTL_ISSUE_DEFAULT_ROLECERT_SUBJ_O }}'
+      - -X 'github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultSubjectOrganizationalUnit={{ .Env.ATHENZCTL_ISSUE_DEFAULT_ROLECERT_SUBJ_OU }}'
+      - -X 'github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultSpiffe={{ .Env.ATHENZCTL_ISSUE_DEFAULT_ROLECERT_SPIFFE }}'
+      - -X 'github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultSpiffeTrustDomain={{ .Env.ATHENZCTL_ISSUE_DEFAULT_ROLECERT_SPIFFE_TRUST_DOMAIN }}'
 
 archives:
   - id: athenzctl

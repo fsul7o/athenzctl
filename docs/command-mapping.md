@@ -272,12 +272,14 @@ command in athenzctl.
 | `-domain` | `-d`/`--domain` (global) | |
 | `-service` | `--service` | |
 | `-dns-domain` | `--dns-domain` | |
-| `-subj-c` / `-subj-o` / `-subj-ou` | `--subj-c` / `--subj-o` / `--subj-ou` | |
+| `-subj-c` / `-subj-o` / `-subj-ou` | `--subj-c` / `--subj-p` / `--subj-o` / `--subj-ou` | `--subj-p` is athenzctl extension |
+| (none) | Build-time `ISSUE_DEFAULT_SERVICECERT_*` or context `issue-defaults.servicecert` | CLI flags override context and build-time defaults |
 | `-ip` | `--ip` | |
 | `-provider` / `-instance` | `--provider` / `--instance` | Used by both `issue servicecert` (`--instance-id` is a deprecated alias) and `issue instance-register-token` |
 | `-attestation-data` | `--attestation-data` | |
 | `-svc-key-file` / `-svc-cert-file` / `-ntoken-file` / `-key-version` / `-hdr` | `config set-context --key/--cert` (NToken-related flags are **out of scope**) | Auth for fetching the instance register token is also centralized in the context |
 | `-signer-key-id` | `--signer-key-id` | |
+| (none) | `--concat-intermediate-cert` | athenzctl appends the CA bundle returned with the service certificate to the output certificate |
 | `-service-cert` | No equivalent | |
 | `-version` | `athenzctl version` | |
 
@@ -293,12 +295,15 @@ command in athenzctl.
 | `-zts` | `config set-context --zts-url` | |
 | `-role-domain` / `-role-name` | `--role-domain` / `--role-name` (`--role` is a deprecated alias) | |
 | `-dns-domain` | `--dns-domain` | |
-| `-subj-c` / `-subj-o` / `-subj-ou` | `--subj-c` / `--subj-o` / `--subj-ou` | |
+| `-subj-c` / `-subj-o` / `-subj-ou` | `--subj-c` / `--subj-p` / `--subj-o` / `--subj-ou` | `--subj-p` is athenzctl extension |
+| (none) | Build-time `ISSUE_DEFAULT_ROLECERT_*` or context `issue-defaults.rolecert` | CLI flags override context and build-time defaults |
 | `-ip` | `--ip` | |
 | `-old-role-cert` | `--old-role-cert` | |
 | `-spiffe` / `-spiffe-trust-domain` | `--spiffe` / `--spiffe-trust-domain` | |
 | `-csr` | `--csr` | |
 | `-expiry-time` | `--expiry-time` (`--expiry-mins` is a deprecated alias) | |
+| (none) | `--concat-intermediate-cert` | When the response does not already contain a chain, fetch and append the CA bundle named by `--cacert-bundle-name` |
+| (none) | `--cacert-bundle-name` | CA bundle name used with `--concat-intermediate-cert` |
 | `-proxy` | `--proxy-for-principal` (different concept — see notes) | zts-rolecert's `-proxy` is an HTTP-proxy-enable flag; athenzctl's `--proxy-for-principal` specifies a delegate principal. Neither is a direct equivalent of the other |
 | `-version` | `athenzctl version` | |
 

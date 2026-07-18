@@ -42,6 +42,50 @@ athenzctl fetch signedpolicy my.domain --output-dir /var/lib/zpe/
 - **Auth:** mTLS (service identity certificate + private key, the default) or `auth-mode: exec` to obtain the client cert from an external command (kubectl exec-credential style — see below). NToken and legacy role-token issuance are out of scope.
 - **Config file:** `~/.athenzctl/config.yaml` (kubeconfig-style; override with `$ATHENZCTL_CONFIG` or `--config`).
 
+## Issue certificate defaults
+
+The distribution build can embed the defaults used by `issue servicecert` and `issue rolecert`, so users do not need to configure organization-specific CSR values after installing the binary. Public builds keep the generic defaults (`US`, `Oath Inc.`, `Athenz`, and SPIFFE enabled). A private distribution can override them at build time, for example:
+
+```sh
+make build \
+    ISSUE_DEFAULT_SERVICECERT_SUBJ_C=JP \
+    ISSUE_DEFAULT_SERVICECERT_SUBJ_P=Tokyo \
+    ISSUE_DEFAULT_SERVICECERT_SUBJ_O='Example Inc.' \
+    ISSUE_DEFAULT_SERVICECERT_SUBJ_OU=Services \
+    ISSUE_DEFAULT_SERVICECERT_DNS_DOMAIN=athenz.example \
+    ISSUE_DEFAULT_ROLECERT_SUBJ_C=JP \
+    ISSUE_DEFAULT_ROLECERT_SUBJ_P=Tokyo \
+    ISSUE_DEFAULT_ROLECERT_SUBJ_O='Example Inc.' \
+    ISSUE_DEFAULT_ROLECERT_SUBJ_OU=Roles \
+    ISSUE_DEFAULT_ROLECERT_DNS_DOMAIN=athenz.example
+```
+
+The same values can be supplied to GoReleaser through the corresponding `ATHENZCTL_ISSUE_DEFAULT_*` environment variables. Service and role certificate defaults are independent. A context may override the embedded values under `issue-defaults.servicecert` and `issue-defaults.rolecert`, and an explicit command-line flag always has the highest priority.
+
+For example, the optional context-level override is:
+
+```yaml
+contexts:
+  - name: prod
+    issue-defaults:
+      servicecert:
+        subj-c: JP
+        subj-p: Tokyo
+        subj-o: Example Inc.
+        subj-ou: Services
+        spiffe: false
+        dns-domain: athenz.example
+      rolecert:
+        subj-c: JP
+        subj-p: Tokyo
+        subj-o: Example Inc.
+        subj-ou: Roles
+        spiffe-trust-domain: spiffe.example
+        dns-domain: athenz.example
+```
+
+`dns-domain` can be omitted from an issue command when it is embedded in the binary or configured in the selected context. Otherwise it remains required. For an exceptional context-specific override, use the certificate-prefixed `config set-context` flags such as `--servicecert-subj-o` or `--rolecert-dns-domain`. The corresponding Province defaults are available as `--servicecert-subj-p` and `--rolecert-subj-p`.
+
 ## Auth modes
 
 **mTLS (default)** — as shown in Quick start: `--cert`/`--key` point at a static service identity certificate and key.

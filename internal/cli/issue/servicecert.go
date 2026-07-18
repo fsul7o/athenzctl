@@ -1,7 +1,6 @@
 package issue
 
 import (
-	"crypto/x509/pkix"
 	"errors"
 	"fmt"
 	"os"
@@ -18,24 +17,23 @@ import (
 // come from the athenzctl context.
 func newServiceCert(opts *cliopts.Options) *cobra.Command {
 	var (
-		service                  string
-		provider                 string
-		instance                 string
-		instanceIDDeprecated     string
-		privateKeyPath           string
-		dnsDomain                string
-		subjC, subjO, subjOU     string
-		spiffe                   bool
-		spiffeTrustDomain        string
-		ip                       string
-		attestationDataFile      string
-		signerKeyID              string
-		expiryTime               int
-		expiryMinsDeprecated     int32
-		outPath                  string
-		signerOutPath            string
-		csrOnly                  bool
-		useInstanceRegisterToken bool
+		service                     string
+		provider                    string
+		instance                    string
+		privateKeyPath              string
+		dnsDomain                   string
+		subjC, subjP, subjO, subjOU string
+		spiffe                      bool
+		spiffeTrustDomain           string
+		ip                          string
+		attestationDataFile         string
+		signerKeyID                 string
+		expiryTime                  int
+		outPath                     string
+		signerOutPath               string
+		csrOnly                     bool
+		useInstanceRegisterToken    bool
+		concatIntermediateCert      bool
 	)
 	cmd := &cobra.Command{
 		Use:   "servicecert",
@@ -51,6 +49,18 @@ Modes (mirrors zts-svccert):
 
 ZTS URL and mTLS credentials always come from the athenzctl context.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			defaults, err := resolveCertificateDefaults(cmd, opts, serviceCertKind)
+			if err != nil {
+				return err
+			}
+			dnsDomain = defaults.dnsDomain
+			subjC = defaults.subjectCountry
+			subjP = defaults.subjectProvince
+			subjO = defaults.subjectOrganization
+			subjOU = defaults.subjectOrganizationalUnit
+			spiffe = defaults.spiffe
+			spiffeTrustDomain = defaults.spiffeTrustDomain
+
 			domain, err := opts.RequireDomain()
 			if err != nil {
 				return err
@@ -62,15 +72,8 @@ ZTS URL and mTLS credentials always come from the athenzctl context.`,
 				return errors.New("issue servicecert requires --private-key")
 			}
 			if dnsDomain == "" {
-				return errors.New("issue servicecert requires --dns-domain")
+				return errors.New("issue servicecert requires --dns-domain or a servicecert default")
 			}
-			if instance == "" && instanceIDDeprecated != "" {
-				instance = instanceIDDeprecated
-			}
-			if expiryTime == 0 && expiryMinsDeprecated > 0 {
-				expiryTime = int(expiryMinsDeprecated)
-			}
-
 			keyBytes, err := os.ReadFile(privateKeyPath)
 			if err != nil {
 				if !useInstanceRegisterToken || !os.IsNotExist(err) {
@@ -105,12 +108,7 @@ ZTS URL and mTLS credentials always come from the athenzctl context.`,
 					spiffeURI = fmt.Sprintf("spiffe://%s/sa/%s", domain, service)
 				}
 			}
-			subj := pkix.Name{
-				CommonName:         commonName,
-				OrganizationalUnit: []string{subjOU},
-				Organization:       []string{subjO},
-				Country:            []string{subjC},
-			}
+			subj := newCSRSubject(commonName, subjC, subjP, subjO, subjOU)
 			csrPEM, err := generateCSR(signer, subj, host, instanceURI, ip, spiffeURI)
 			if err != nil {
 				return err
@@ -164,6 +162,9 @@ ZTS URL and mTLS credentials always come from the athenzctl context.`,
 					return cliopts.WrapErr(err)
 				}
 				certificate = ident.Certificate
+				if concatIntermediateCert {
+					certificate += ident.CaCertBundle
+				}
 				signerCert = ident.CaCertBundle
 			}
 
@@ -178,11 +179,10 @@ ZTS URL and mTLS credentials always come from the athenzctl context.`,
 	cmd.Flags().StringVar(&service, "service", "", "service name (required)")
 	cmd.Flags().StringVar(&provider, "provider", "", "Athenz provider service name (initial registration only)")
 	cmd.Flags().StringVar(&instance, "instance", "", "instance ID")
-	cmd.Flags().StringVar(&instanceIDDeprecated, "instance-id", "", "deprecated: use --instance")
-	_ = cmd.Flags().MarkDeprecated("instance-id", "use --instance")
 	cmd.Flags().StringVar(&privateKeyPath, "private-key", "", "path to the service private key PEM (required)")
-	cmd.Flags().StringVar(&dnsDomain, "dns-domain", "", "DNS domain suffix to include in the CSR SAN (required)")
+	cmd.Flags().StringVar(&dnsDomain, "dns-domain", "", "DNS domain suffix to include in the CSR SAN (required unless configured)")
 	cmd.Flags().StringVar(&subjC, "subj-c", "US", "CSR Subject Country")
+	cmd.Flags().StringVar(&subjP, "subj-p", "", "CSR Subject Province")
 	cmd.Flags().StringVar(&subjO, "subj-o", "Oath Inc.", "CSR Subject Organization")
 	cmd.Flags().StringVar(&subjOU, "subj-ou", "Athenz", "CSR Subject OrganizationalUnit")
 	cmd.Flags().BoolVar(&spiffe, "spiffe", true, "include SPIFFE URI in CSR SAN")
@@ -191,12 +191,11 @@ ZTS URL and mTLS credentials always come from the athenzctl context.`,
 	cmd.Flags().StringVar(&attestationDataFile, "attestation-data", "", "attestation data file (for --provider registration)")
 	cmd.Flags().StringVar(&signerKeyID, "signer-key-id", "", "ZTS certificate signer key id")
 	cmd.Flags().IntVar(&expiryTime, "expiry-time", 0, "requested certificate lifetime in minutes (0 = server default)")
-	cmd.Flags().Int32Var(&expiryMinsDeprecated, "expiry-mins", 0, "deprecated: use --expiry-time")
-	_ = cmd.Flags().MarkDeprecated("expiry-mins", "use --expiry-time")
 	cmd.Flags().StringVar(&outPath, "out", "", "path to write the signed cert (default: stdout)")
 	cmd.Flags().StringVar(&signerOutPath, "signer-cert-out", "", "path to write the signer CA cert if returned")
 	cmd.Flags().BoolVar(&csrOnly, "csr", false, "print the generated CSR and exit")
 	cmd.Flags().BoolVar(&useInstanceRegisterToken, "use-instance-register-token", false, "fetch an instance register token via the current context and use it as attestation data")
+	cmd.Flags().BoolVar(&concatIntermediateCert, "concat-intermediate-cert", false, "append the returned intermediate CA bundle to the certificate")
 	return cmd
 }
 
