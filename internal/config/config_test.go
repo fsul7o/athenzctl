@@ -13,9 +13,6 @@ func TestLoadMissingReturnsEmpty(t *testing.T) {
 	if len(cfg.Contexts) != 0 {
 		t.Fatalf("expected empty contexts, got %d", len(cfg.Contexts))
 	}
-	if cfg.APIVersion == "" || cfg.Kind == "" {
-		t.Fatalf("expected apiVersion/kind defaulted, got %+v", cfg)
-	}
 }
 
 func TestSaveThenLoadRoundTrip(t *testing.T) {

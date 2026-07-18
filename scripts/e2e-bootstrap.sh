@@ -133,8 +133,6 @@ wait_http() {
 wait_http "http://127.0.0.1:${DEX_LOCAL_PORT}/dex/.well-known/openid-configuration" dex
 
 cat >"${OUT_DIR}/config.yaml" <<EOF
-apiVersion: athenzctl.athenz.io/v1
-kind: Config
 current-context: local
 contexts:
   - name: local

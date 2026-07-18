@@ -19,8 +19,6 @@ const (
 
 // Config is the root document of ~/.athenzctl/config.yaml.
 type Config struct {
-	APIVersion     string    `yaml:"apiVersion"`
-	Kind           string    `yaml:"kind"`
 	CurrentContext string    `yaml:"current-context,omitempty"`
 	Contexts       []Context `yaml:"contexts,omitempty"`
 }
@@ -82,10 +80,7 @@ type ExecConfig struct {
 
 // New returns an empty but structurally valid Config.
 func New() *Config {
-	return &Config{
-		APIVersion: "athenzctl.athenz.io/v1",
-		Kind:       "Config",
-	}
+	return &Config{}
 }
 
 // DefaultPath returns the configuration file path, honoring $ATHENZCTL_CONFIG
@@ -115,12 +110,6 @@ func Load(path string) (*Config, error) {
 	cfg := New()
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return nil, fmt.Errorf("parse %s: %w", path, err)
-	}
-	if cfg.APIVersion == "" {
-		cfg.APIVersion = "athenzctl.athenz.io/v1"
-	}
-	if cfg.Kind == "" {
-		cfg.Kind = "Config"
 	}
 	return cfg, nil
 }
