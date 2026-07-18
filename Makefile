@@ -17,7 +17,7 @@ E2E_COVERAGE       ?= 1
 ifeq ($(strip $(CI)),)
 E2E_IMAGE_TARGETS  := load-docker-images load-kubernetes-images
 else
-E2E_IMAGE_TARGETS  := load-docker-images-internal
+E2E_IMAGE_TARGETS  := 
 endif
 
 .PHONY: build test lint tidy install clean snapshot \
