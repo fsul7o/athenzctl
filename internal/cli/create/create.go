@@ -12,6 +12,20 @@ import (
 
 // New returns the `create` command.
 func New(opts *cliopts.Options) *cobra.Command {
+	kindFlags := cliopts.KindFlagSpec{
+		Common: []string{"audit-ref"},
+		ByKind: map[resource.Kind][]string{
+			resource.KindDomain:         {"admin-users", "description", "parent", "user"},
+			resource.KindRole:           {"members", "trust"},
+			resource.KindPolicy:         {},
+			resource.KindPolicyVersion:  {"from-version"},
+			resource.KindService:        {"provider-endpoint", "description"},
+			resource.KindServiceKey:     {"pem", "key"},
+			resource.KindDomainTemplate: {"param"},
+			resource.KindGroup:          {"members"},
+			resource.KindMembership:     {"role", "group", "member", "approve", "reject"},
+		},
+	}
 	cmd := &cobra.Command{
 		Use:   "create KIND NAME [flags]",
 		Short: "Create a new Athenz resource on the server",
@@ -23,6 +37,9 @@ group, membership, domain-template.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			kind, err := resource.Parse(args[0])
 			if err != nil {
+				return err
+			}
+			if err := cliopts.ValidateKindFlags(cmd, "create", kind, kindFlags); err != nil {
 				return err
 			}
 			zc, err := opts.ZMSClient()
@@ -125,6 +142,8 @@ group, membership, domain-template.`,
 	// Membership decision flags (approve/reject pending).
 	cmd.Flags().Bool("approve", false, "approve a pending membership request (for KIND=membership)")
 	cmd.Flags().Bool("reject", false, "reject a pending membership request (for KIND=membership)")
+
+	cliopts.SetKindAwareHelp(cmd, kindFlags)
 
 	return cmd
 }
