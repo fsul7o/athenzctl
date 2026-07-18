@@ -52,9 +52,13 @@ Feature: athenzctl config
   Scenario: save every context connection option
     Given a fresh athenz stack
     And a unique context "e2e-options-context"
-    When I run athenzctl "config set-context $CONTEXT --zms-url https://zms.example.test/zms/v1 --zts-url https://zts.example.test/zts/v1 --cert $ADMIN_CERT --key $ADMIN_KEY --ca-cert $ADMIN_CA --zms-server-name zms.example.test --zts-server-name zts.example.test --auth-mode exec --exec-command /bin/true --exec-arg first --exec-arg second --exec-env E2E_OPTION=enabled --exec-cert-path $ADMIN_CERT --exec-key-path $ADMIN_KEY"
+    When I run athenzctl "config set-context $CONTEXT --zms-url https://zms.example.test/zms/v1 --zts-url https://zts.example.test/zts/v1 --cert $ADMIN_CERT --key $ADMIN_KEY --ca-cert $ADMIN_CA --zms-server-name zms.example.test --zts-server-name zts.example.test --auth-mode exec --exec-command /bin/true --exec-arg first --exec-arg second --exec-env E2E_OPTION=enabled --exec-cert-path $ADMIN_CERT --exec-key-path $ADMIN_KEY --servicecert-subj-c JP --servicecert-subj-p Tokyo --servicecert-subj-o ServiceOrg --servicecert-subj-ou Services --servicecert-spiffe=false --servicecert-spiffe-trust-domain service.trust --servicecert-dns-domain service.example --rolecert-subj-c US --rolecert-subj-p California --rolecert-subj-o RoleOrg --rolecert-subj-ou Roles --rolecert-spiffe=true --rolecert-spiffe-trust-domain role.trust --rolecert-dns-domain role.example"
     Then the command should succeed
     When I run athenzctl "config view"
     Then the command should succeed
     And stdout should contain "auth-mode: exec"
     And stdout should contain "E2E_OPTION: enabled"
+    And stdout should contain "servicecert"
+    And stdout should contain "rolecert"
+    And stdout should contain "service.example"
+    And stdout should contain "role.example"

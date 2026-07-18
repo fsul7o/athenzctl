@@ -7,7 +7,21 @@ DATE     ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 LDFLAGS  := -s -w \
 	-X $(PKG)/internal/version.Version=$(VERSION) \
 	-X $(PKG)/internal/version.Commit=$(COMMIT) \
-	-X $(PKG)/internal/version.Date=$(DATE)
+	-X $(PKG)/internal/version.Date=$(DATE) \
+	-X '$(PKG)/internal/cli/issue.ServiceCertDefaultDNSDomain=$(ISSUE_DEFAULT_SERVICECERT_DNS_DOMAIN)' \
+	-X '$(PKG)/internal/cli/issue.ServiceCertDefaultSubjectCountry=$(ISSUE_DEFAULT_SERVICECERT_SUBJ_C)' \
+	-X '$(PKG)/internal/cli/issue.ServiceCertDefaultSubjectProvince=$(ISSUE_DEFAULT_SERVICECERT_SUBJ_P)' \
+	-X '$(PKG)/internal/cli/issue.ServiceCertDefaultSubjectOrganization=$(ISSUE_DEFAULT_SERVICECERT_SUBJ_O)' \
+	-X '$(PKG)/internal/cli/issue.ServiceCertDefaultSubjectOrganizationalUnit=$(ISSUE_DEFAULT_SERVICECERT_SUBJ_OU)' \
+	-X '$(PKG)/internal/cli/issue.ServiceCertDefaultSpiffe=$(ISSUE_DEFAULT_SERVICECERT_SPIFFE)' \
+	-X '$(PKG)/internal/cli/issue.ServiceCertDefaultSpiffeTrustDomain=$(ISSUE_DEFAULT_SERVICECERT_SPIFFE_TRUST_DOMAIN)' \
+	-X '$(PKG)/internal/cli/issue.RoleCertDefaultDNSDomain=$(ISSUE_DEFAULT_ROLECERT_DNS_DOMAIN)' \
+	-X '$(PKG)/internal/cli/issue.RoleCertDefaultSubjectCountry=$(ISSUE_DEFAULT_ROLECERT_SUBJ_C)' \
+	-X '$(PKG)/internal/cli/issue.RoleCertDefaultSubjectProvince=$(ISSUE_DEFAULT_ROLECERT_SUBJ_P)' \
+	-X '$(PKG)/internal/cli/issue.RoleCertDefaultSubjectOrganization=$(ISSUE_DEFAULT_ROLECERT_SUBJ_O)' \
+	-X '$(PKG)/internal/cli/issue.RoleCertDefaultSubjectOrganizationalUnit=$(ISSUE_DEFAULT_ROLECERT_SUBJ_OU)' \
+	-X '$(PKG)/internal/cli/issue.RoleCertDefaultSpiffe=$(ISSUE_DEFAULT_ROLECERT_SPIFFE)' \
+	-X '$(PKG)/internal/cli/issue.RoleCertDefaultSpiffeTrustDomain=$(ISSUE_DEFAULT_ROLECERT_SPIFFE_TRUST_DOMAIN)'
 
 ATHENZ_DIST_DIR    := .local/athenz-distribution
 ATHENZ_DIST_REPO   := https://github.com/ctyano/athenz-distribution.git
@@ -24,7 +38,7 @@ endif
 	e2e-clone e2e-up e2e-down e2e e2e-focus e2e-sweep e2e-clean
 
 build:
-	go build -trimpath -ldflags '$(LDFLAGS)' -o bin/$(BINARY) $(CMD)
+	go build -trimpath -ldflags "$(LDFLAGS)" -o bin/$(BINARY) $(CMD)
 
 test:
 	go test ./...
@@ -36,7 +50,7 @@ tidy:
 	go mod tidy
 
 install:
-	go install -trimpath -ldflags '$(LDFLAGS)' $(CMD)
+	go install -trimpath -ldflags "$(LDFLAGS)" $(CMD)
 
 clean:
 	rm -rf bin dist
