@@ -15,7 +15,7 @@ ATHENZ_DIST_PATCHES := $(wildcard $(PWD)/scripts/patches/athenz-distribution-*.p
 E2E_CONFIG         := $(PWD)/.local/e2e/config.yaml
 E2E_COVERAGE       ?= 1
 ifeq ($(strip $(CI)),)
-E2E_IMAGE_TARGETS  := load-docker-images load-kubernetes-images
+E2E_IMAGE_TARGETS  := deploy-kubernetes-in-docker load-docker-images load-kubernetes-images
 else
 E2E_IMAGE_TARGETS  := 
 endif
