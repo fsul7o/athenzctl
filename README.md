@@ -16,6 +16,10 @@ go install github.com/fsul7o/athenzctl/cmd/athenzctl@latest
 
 Homebrew and pre-built binaries via GitHub Releases will follow with the first tagged release.
 
+## Development and AI context
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow, unit and end-to-end tests, and Microsoft APM setup. The repository's AI instructions and review agent are maintained under `.apm/`; choose a target such as `apm install --target codex` followed by `apm compile --target codex --clean` to generate only the client-specific context you need.
+
 ## Quick start
 
 ```sh

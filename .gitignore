@@ -6,3 +6,27 @@
 coverage.txt
 /.local/
 /.vscode/
+# APM dependencies
+apm_modules/
+apm.lock.yaml
+
+# APM-generated agent context (keep .apm/ and the manifest as source files).
+/AGENTS.md
+/CLAUDE.md
+/GEMINI.md
+/.agents/skills/
+/.agents/rules/
+/.agents/hooks.json
+/.agents/mcp_config.json
+/.claude/agents/
+/.claude/rules/
+/.codex/agents/
+/.codex/hooks.json
+/.cursor/agents/
+/.cursor/rules/
+/.github/agents/
+/.github/instructions/
+/.github/copilot-instructions.md
+/.kiro/steering/
+/.opencode/agents/
+/.windsurf/rules/

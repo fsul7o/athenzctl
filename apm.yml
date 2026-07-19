@@ -1,0 +1,16 @@
+name: athenzctl
+version: 0.1.0
+description: AI development context and review agents for athenzctl
+author: athenzctl maintainers
+license: Apache-2.0
+
+# Targets are selected per installation with `apm install --target ...`.
+# Keep this unset so a checkout does not install every client by default.
+
+includes: auto
+
+dependencies:
+  apm: []
+  mcp: []
+
+scripts: {}
