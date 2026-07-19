@@ -4,10 +4,10 @@ import "testing"
 
 func TestParsePolicyVersion(t *testing.T) {
 	cases := []struct {
-		in       string
-		wantPol  string
-		wantVer  string
-		wantErr  bool
+		in      string
+		wantPol string
+		wantVer string
+		wantErr bool
 	}{
 		{"read-access", "read-access", "", false},
 		{"read-access:v2", "read-access", "v2", false},

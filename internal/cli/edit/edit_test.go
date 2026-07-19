@@ -7,10 +7,10 @@ import (
 
 func TestSplitEditorCmd(t *testing.T) {
 	cases := map[string][]string{
-		"vim":                 {"vim"},
-		"code --wait":         {"code", "--wait"},
-		"  emacs -nw   ":      {"emacs", "-nw"},
-		"nvim +startinsert":   {"nvim", "+startinsert"},
+		"vim":               {"vim"},
+		"code --wait":       {"code", "--wait"},
+		"  emacs -nw   ":    {"emacs", "-nw"},
+		"nvim +startinsert": {"nvim", "+startinsert"},
 	}
 	for in, want := range cases {
 		got := splitEditorCmd(in)

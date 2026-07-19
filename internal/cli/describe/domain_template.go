@@ -27,10 +27,10 @@ func describeDomainTemplate(w io.Writer, zc *zms.ZMSClient, domain, name string,
 	}
 	applied := containsTemplate(list, name)
 	return render(w, format, struct {
-		Name              string        `json:"name"`
-		AppliedToDomain   bool          `json:"appliedToDomain"`
-		Domain            string        `json:"domain"`
-		Template          *zms.Template `json:"template"`
+		Name            string        `json:"name"`
+		AppliedToDomain bool          `json:"appliedToDomain"`
+		Domain          string        `json:"domain"`
+		Template        *zms.Template `json:"template"`
 	}{name, applied, domain, tpl})
 }
 
