@@ -13,6 +13,7 @@ import (
 	fetchcmd "github.com/fsul7o/athenzctl/internal/cli/fetch"
 	getcmd "github.com/fsul7o/athenzctl/internal/cli/get"
 	issuecmd "github.com/fsul7o/athenzctl/internal/cli/issue"
+	lookupcmd "github.com/fsul7o/athenzctl/internal/cli/lookup"
 	patchcmd "github.com/fsul7o/athenzctl/internal/cli/patch"
 	versioncmd "github.com/fsul7o/athenzctl/internal/cli/version"
 	"github.com/fsul7o/athenzctl/internal/cliopts"
@@ -52,6 +53,7 @@ a single verb-resource interface.`,
 	cmd.AddCommand(editcmd.New(opts))
 	cmd.AddCommand(patchcmd.New(opts))
 	cmd.AddCommand(checkcmd.New(opts))
+	cmd.AddCommand(lookupcmd.New(opts))
 	cmd.AddCommand(issuecmd.New(opts))
 	cmd.AddCommand(fetchcmd.New(opts))
 

@@ -42,7 +42,7 @@ athenzctl fetch signedpolicy my.domain --output-dir /var/lib/zpe/
 
 ## Design
 
-- **Verbs:** `get`, `describe`, `create`, `delete`, `edit`, `issue`, `fetch`, `config`.
+- **Verbs:** `get`, `describe`, `create`, `delete`, `edit`, `lookup`, `issue`, `fetch`, `config`.
 - **Auth:** mTLS (service identity certificate + private key, the default) or `auth-mode: exec` to obtain the client cert from an external command (kubectl exec-credential style — see below). NToken and legacy role-token issuance are out of scope.
 - **Config file:** `~/.athenzctl/config.yaml` (kubeconfig-style; override with `$ATHENZCTL_CONFIG` or `--config`).
 

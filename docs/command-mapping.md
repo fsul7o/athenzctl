@@ -82,7 +82,13 @@ athenzctl centralizes connection targets and credentials in a **kubeconfig-style
 | `disable-domain` / `enable-domain` | `patch domain-meta NAME enabled=false/true` | |
 | `check-domain` | No equivalent | Domain validation feature |
 | `use-domain` | No equivalent (`-d`/`--context` serve a similar purpose) | No interactive-mode concept exists |
-| `lookup-domain-by-*` (role/tag/aws-account/azure-subscription/gcp-project/product-id/business-service) | No equivalent | Search/lookup commands are entirely unimplemented |
+| `lookup-domain-by-role member role` | `lookup domain --field-selector member=MEMBER,role=ROLE` | Server-side domain lookup |
+| `lookup-domain-by-tag [key] [value]` | `lookup domain --field-selector tagKey=KEY[,tagValue=VALUE]` | `tagValue` is optional |
+| `lookup-domain-by-aws-account account-id` | `lookup domain --field-selector account=ACCOUNT_ID` | Server-side domain lookup |
+| `lookup-domain-by-azure-subscription subscription-id` | `lookup domain --field-selector azure=SUBSCRIPTION_ID` | Server-side domain lookup |
+| `lookup-domain-by-gcp-project project-id` | `lookup domain --field-selector gcp=PROJECT_ID` | Server-side domain lookup |
+| `lookup-domain-by-product-id product-id` | `lookup domain --field-selector productId=PRODUCT_ID` | Numeric values use the legacy `ypmid` search, matching zms-cli |
+| `lookup-domain-by-business-service business-service` | `lookup domain --field-selector businessService=BUSINESS_SERVICE` | Server-side domain lookup |
 | `import-domain` / `update-domain` / `export-domain` (bulk YAML) | No equivalent | `edit` only supports interactive editing of a single resource — no bulk import/export |
 | `system-backup dir` | No equivalent | |
 | `get-signed-domains [matching_tag]` | `fetch signedpolicy DOMAIN...` (related but a different API) | zms-cli's version calls ZMS `SignedDomains` (full data for ZPU); athenzctl's calls ZTS `PostSignedPolicyRequest` (JWS for a single domain) |
@@ -346,7 +352,7 @@ athenzctl is in "early development (pre-v0.1)"; the following are currently clea
 - **Generic entities** (`*-entity`): no corresponding resource kind exists.
 - **resource-ownership metadata** (`set-*-resource-ownership`): unimplemented for every resource.
 - **Bulk domain import/export** (`import-domain`/`export-domain`/`update-domain`/`system-backup`): unimplemented. `edit`/`patch` only operate on a single resource at a time.
-- **Search/lookup commands** (`lookup-domain-by-*`, `search-services`, `show-roles-principal`, etc.): unimplemented.
+- **Other search/lookup commands** (`search-services`, `show-roles-principal`, etc.): unimplemented. Domain lookup is available through `lookup domain --field-selector ...`.
 - **Review-due tracking, stats, dependency management** (`overdue-review`, `get-stats`, `get-auth-history`, `get-dependent-*`, `put-*-dependency`): unimplemented.
 - **System administrator / principal management** (`set-default-admins`, `list-user`, `delete-user`, `disable-principal`, `enable-principal`): unimplemented.
 - **zpu's state-management features** (`-check-status`, `-check-details`, `-view-domain`, caching, signature verification): `fetch signedpolicy` is on-demand fetch only and has none of zpu's daemon-like functionality.
