@@ -6,16 +6,21 @@
 package client
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/fsul7o/athenzctl/internal/config"
 	"github.com/fsul7o/athenzctl/internal/execcredential"
+	"golang.org/x/net/proxy"
 )
 
 const defaultTimeout = 30 * time.Second
@@ -49,8 +54,9 @@ func TLSConfig(ctx *config.Context) (*tls.Config, error) {
 		}
 	}
 	tlsCfg := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		MinVersion:   tls.VersionTLS12,
+		Certificates:       []tls.Certificate{cert},
+		MinVersion:         tls.VersionTLS12,
+		InsecureSkipVerify: ctx.InsecureSkipTLSVerify, // configured explicitly by the user
 	}
 	if ctx.CACert != "" {
 		pem, err := os.ReadFile(ctx.CACert)
@@ -66,16 +72,86 @@ func TLSConfig(ctx *config.Context) (*tls.Config, error) {
 	return tlsCfg, nil
 }
 
-// HTTPClient returns an *http.Client wired for mTLS against the given context.
-func HTTPClient(ctx *config.Context) (*http.Client, error) {
+// Transport returns an HTTP transport configured for the context's TLS and
+// proxy settings. A proxy value without a scheme is treated as a SOCKS5
+// address for compatibility with zms-cli's -s flag.
+func Transport(ctx *config.Context) (*http.Transport, error) {
 	tlsCfg, err := TLSConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
+	transport := &http.Transport{
+		TLSClientConfig:       tlsCfg,
+		ResponseHeaderTimeout: defaultTimeout,
+	}
+	if ctx.ProxyURL == "" {
+		return transport, nil
+	}
+
+	proxyURL, err := parseProxyURL(ctx.ProxyURL)
+	if err != nil {
+		return nil, err
+	}
+	switch proxyURL.Scheme {
+	case "http", "https":
+		transport.Proxy = http.ProxyURL(proxyURL)
+	case "socks5", "socks5h":
+		var auth *proxy.Auth
+		if proxyURL.User != nil {
+			password, _ := proxyURL.User.Password()
+			auth = &proxy.Auth{User: proxyURL.User.Username(), Password: password}
+		}
+		dialer, err := proxy.SOCKS5("tcp", proxyURL.Host, auth, &net.Dialer{})
+		if err != nil {
+			return nil, fmt.Errorf("configure SOCKS5 proxy %q: %w", ctx.ProxyURL, err)
+		}
+		transport.Proxy = nil
+		transport.DialContext = func(_ context.Context, network, address string) (net.Conn, error) {
+			return dialer.Dial(network, address)
+		}
+	default:
+		return nil, fmt.Errorf("unsupported proxy scheme %q (want socks5, http, or https)", proxyURL.Scheme)
+	}
+	return transport, nil
+}
+
+func parseProxyURL(raw string) (*url.URL, error) {
+	if !strings.Contains(raw, "://") {
+		if _, _, err := net.SplitHostPort(raw); err != nil {
+			return nil, fmt.Errorf("invalid proxy %q: expected host:port or URL: %w", raw, err)
+		}
+		return &url.URL{Scheme: "socks5", Host: raw}, nil
+	}
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return nil, fmt.Errorf("invalid proxy %q: %w", raw, err)
+	}
+	if parsed.Host == "" {
+		return nil, fmt.Errorf("invalid proxy %q: missing host", raw)
+	}
+	parsed.Scheme = strings.ToLower(parsed.Scheme)
+	if parsed.Scheme == "socks5" || parsed.Scheme == "socks5h" {
+		if _, _, err := net.SplitHostPort(parsed.Host); err != nil {
+			return nil, fmt.Errorf("invalid proxy %q: SOCKS5 requires host:port: %w", raw, err)
+		}
+	}
+	if parsed.Path != "" || parsed.RawQuery != "" || parsed.Fragment != "" {
+		return nil, fmt.Errorf("invalid proxy %q: path, query, and fragment are not supported", raw)
+	}
+	if parsed.User != nil && parsed.User.Username() == "" {
+		return nil, fmt.Errorf("invalid proxy %q: username must not be empty", raw)
+	}
+	return parsed, nil
+}
+
+// HTTPClient returns an *http.Client wired for mTLS against the given context.
+func HTTPClient(ctx *config.Context) (*http.Client, error) {
+	transport, err := Transport(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return &http.Client{
-		Timeout: defaultTimeout,
-		Transport: &http.Transport{
-			TLSClientConfig: tlsCfg,
-		},
+		Timeout:   defaultTimeout,
+		Transport: transport,
 	}, nil
 }

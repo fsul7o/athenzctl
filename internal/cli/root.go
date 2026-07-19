@@ -36,6 +36,12 @@ a single verb-resource interface.`,
 	cmd.PersistentFlags().StringVar(&opts.ContextName, "context", "", "name of the context to use (overrides current-context)")
 	cmd.PersistentFlags().StringVarP(&opts.Domain, "domain", "d", "", "Athenz domain scope for the operation")
 	cmd.PersistentFlags().StringVarP(&opts.Output, "output", "o", "", "output format: table|json|yaml|wide")
+	cmd.PersistentFlags().BoolVarP(&opts.InsecureSkipTLSVerify, "insecure-skip-tls-verify", "k", false, "disable TLS certificate and hostname verification")
+	cmd.PersistentFlags().StringVarP(&opts.ProxyURL, "proxy", "s", "", "proxy URL (host:port for SOCKS5, or socks5/http/https URL)")
+	cmd.PersistentPreRun = func(cmd *cobra.Command, _ []string) {
+		opts.InsecureSkipTLSVerifySet = cmd.Flags().Changed("insecure-skip-tls-verify")
+		opts.ProxyURLSet = cmd.Flags().Changed("proxy")
+	}
 
 	cmd.AddCommand(versioncmd.New())
 	cmd.AddCommand(configcmd.New(&configcmd.Options{ConfigPath: &opts.ConfigPath}))

@@ -30,17 +30,19 @@ type Config struct {
 // server certificate — e.g. dialing https://localhost:4443 against a cert
 // whose SAN is athenz-zms-server. Leave empty in normal deployments.
 type Context struct {
-	Name          string         `yaml:"name"`
-	ZMSURL        string         `yaml:"zms-url,omitempty"`
-	ZTSURL        string         `yaml:"zts-url,omitempty"`
-	Cert          string         `yaml:"cert,omitempty"`            // path to PEM
-	Key           string         `yaml:"key,omitempty"`             // path to PEM
-	CACert        string         `yaml:"ca-cert,omitempty"`         // optional
-	ZMSServerName string         `yaml:"zms-server-name,omitempty"` // optional TLS ServerName override
-	ZTSServerName string         `yaml:"zts-server-name,omitempty"` // optional TLS ServerName override
-	AuthMode      string         `yaml:"auth-mode,omitempty"`       // "" or "mtls" (default), "exec"
-	Exec          *ExecConfig    `yaml:"exec,omitempty"`
-	IssueDefaults *IssueDefaults `yaml:"issue-defaults,omitempty"`
+	Name                  string         `yaml:"name"`
+	ZMSURL                string         `yaml:"zms-url,omitempty"`
+	ZTSURL                string         `yaml:"zts-url,omitempty"`
+	Cert                  string         `yaml:"cert,omitempty"`            // path to PEM
+	Key                   string         `yaml:"key,omitempty"`             // path to PEM
+	CACert                string         `yaml:"ca-cert,omitempty"`         // optional
+	ZMSServerName         string         `yaml:"zms-server-name,omitempty"` // optional TLS ServerName override
+	ZTSServerName         string         `yaml:"zts-server-name,omitempty"` // optional TLS ServerName override
+	InsecureSkipTLSVerify bool           `yaml:"insecure-skip-tls-verify,omitempty"`
+	ProxyURL              string         `yaml:"proxy,omitempty"`
+	AuthMode              string         `yaml:"auth-mode,omitempty"` // "" or "mtls" (default), "exec"
+	Exec                  *ExecConfig    `yaml:"exec,omitempty"`
+	IssueDefaults         *IssueDefaults `yaml:"issue-defaults,omitempty"`
 }
 
 // IssueDefaults contains optional defaults for the credential-issuing

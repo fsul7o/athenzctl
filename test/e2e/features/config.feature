@@ -62,3 +62,14 @@ Feature: athenzctl config
     And stdout should contain "rolecert"
     And stdout should contain "service.example"
     And stdout should contain "role.example"
+
+  Scenario: use TLS and proxy connection flags
+    Given a unique context "e2e-connection-flags"
+    When I run athenzctl "config set-context $CONTEXT -k -s 127.0.0.1:1080"
+    Then the command should succeed
+    When I run athenzctl "config set-context $CONTEXT --insecure-skip-tls-verify=false --proxy=socks5://127.0.0.1:1081"
+    Then the command should succeed
+    When I run athenzctl "version -k -s 127.0.0.1:1080"
+    Then the command should succeed
+    When I run athenzctl "version --insecure-skip-tls-verify --proxy=socks5://127.0.0.1:1081"
+    Then the command should succeed

@@ -18,7 +18,15 @@ func TestLoadMissingReturnsEmpty(t *testing.T) {
 func TestSaveThenLoadRoundTrip(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.yaml")
 	orig := New()
-	orig.Upsert(Context{Name: "prod", ZMSURL: "https://zms.example", ZTSURL: "https://zts.example", Cert: "/x/c.pem", Key: "/x/k.pem"})
+	orig.Upsert(Context{
+		Name:                  "prod",
+		ZMSURL:                "https://zms.example",
+		ZTSURL:                "https://zts.example",
+		Cert:                  "/x/c.pem",
+		Key:                   "/x/k.pem",
+		InsecureSkipTLSVerify: true,
+		ProxyURL:              "socks5://proxy.example:1080",
+	})
 	orig.CurrentContext = "prod"
 
 	if err := Save(path, orig); err != nil {
@@ -37,6 +45,9 @@ func TestSaveThenLoadRoundTrip(t *testing.T) {
 	}
 	if got.ZMSURL != "https://zms.example" {
 		t.Fatalf("zms url mismatch: %q", got.ZMSURL)
+	}
+	if !got.InsecureSkipTLSVerify || got.ProxyURL != "socks5://proxy.example:1080" {
+		t.Fatalf("connection settings lost: %+v", got)
 	}
 }
 
