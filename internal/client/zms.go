@@ -2,7 +2,6 @@ package client
 
 import (
 	"errors"
-	"net/http"
 
 	"github.com/AthenZ/athenz/clients/go/zms"
 
@@ -18,16 +17,13 @@ func NewZMSClient(ctx *config.Context) (*zms.ZMSClient, error) {
 	if ctx.ZMSURL == "" {
 		return nil, errors.New("context is missing zms-url")
 	}
-	tlsCfg, err := TLSConfig(ctx)
+	transport, err := Transport(ctx)
 	if err != nil {
 		return nil, err
 	}
+	tlsCfg := transport.TLSClientConfig
 	if ctx.ZMSServerName != "" {
 		tlsCfg.ServerName = ctx.ZMSServerName
-	}
-	transport := &http.Transport{
-		TLSClientConfig:       tlsCfg,
-		ResponseHeaderTimeout: defaultTimeout,
 	}
 	c := zms.NewClient(ctx.ZMSURL, transport)
 	return &c, nil

@@ -11,14 +11,16 @@ import (
 
 func newSetContext(opts *Options) *cobra.Command {
 	var (
-		zmsURL        string
-		ztsURL        string
-		cert          string
-		key           string
-		caCert        string
-		zmsServerName string
-		ztsServerName string
-		authMode      string
+		zmsURL                string
+		ztsURL                string
+		cert                  string
+		key                   string
+		caCert                string
+		zmsServerName         string
+		ztsServerName         string
+		insecureSkipTLSVerify bool
+		proxyURL              string
+		authMode              string
 		// exec fields
 		execCommand            string
 		execArgs               []string
@@ -76,6 +78,12 @@ func newSetContext(opts *Options) *cobra.Command {
 			}
 			if cmd.Flags().Changed("zts-server-name") {
 				ctx.ZTSServerName = ztsServerName
+			}
+			if cmd.Flags().Changed("insecure-skip-tls-verify") {
+				ctx.InsecureSkipTLSVerify = insecureSkipTLSVerify
+			}
+			if cmd.Flags().Changed("proxy") {
+				ctx.ProxyURL = proxyURL
 			}
 			if cmd.Flags().Changed("auth-mode") {
 				ctx.AuthMode = authMode
@@ -205,6 +213,8 @@ func newSetContext(opts *Options) *cobra.Command {
 	cmd.Flags().StringVar(&caCert, "ca-cert", "", "path to CA bundle (PEM) for verifying the server")
 	cmd.Flags().StringVar(&zmsServerName, "zms-server-name", "", "TLS ServerName override for ZMS (SNI + hostname verification)")
 	cmd.Flags().StringVar(&ztsServerName, "zts-server-name", "", "TLS ServerName override for ZTS (SNI + hostname verification)")
+	cmd.Flags().BoolVarP(&insecureSkipTLSVerify, "insecure-skip-tls-verify", "k", false, "disable TLS certificate and hostname verification")
+	cmd.Flags().StringVarP(&proxyURL, "proxy", "s", "", "proxy URL (host:port for SOCKS5, or socks5/http/https URL)")
 	cmd.Flags().StringVar(&authMode, "auth-mode", "", "authentication mode: \"\" or \"mtls\" (default), \"exec\" (obtain the client cert by execing an external command that places it at a known path)")
 	// exec flags
 	cmd.Flags().StringVar(&execCommand, "exec-command", "", "exec: path to the external command that places a fresh cert/key at exec-cert-path/exec-key-path")

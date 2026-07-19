@@ -20,6 +20,8 @@ func TestSetContextIssueDefaultsAreIndependent(t *testing.T) {
 		"--rolecert-subj-o", "Role Org",
 		"--rolecert-spiffe",
 		"--rolecert-dns-domain", "role.example",
+		"--insecure-skip-tls-verify",
+		"--proxy", "http://proxy.example:8080",
 	})
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
@@ -49,5 +51,24 @@ func TestSetContextIssueDefaultsAreIndependent(t *testing.T) {
 	}
 	if role.Spiffe == nil || !*role.Spiffe {
 		t.Fatalf("rolecert spiffe=true was not saved: %+v", role)
+	}
+	if !context.InsecureSkipTLSVerify || context.ProxyURL != "http://proxy.example:8080" {
+		t.Fatalf("connection settings were not saved: %+v", context)
+	}
+
+	cmd.SetArgs([]string{
+		"set-context", "prod",
+		"--proxy", "socks5://proxy.example:1080",
+	})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err = cfg.Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	context = loaded.Find("prod")
+	if context == nil || !context.InsecureSkipTLSVerify || context.ProxyURL != "socks5://proxy.example:1080" || context.IssueDefaults == nil {
+		t.Fatalf("updating connection settings lost existing context data: %+v", context)
 	}
 }

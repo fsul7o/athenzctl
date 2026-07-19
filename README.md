@@ -131,6 +131,17 @@ contexts:
 - The command's stdout/stderr are passed straight through to your terminal, so interactive login prompts still work.
 - athenzctl re-runs the command on every invocation; it does not cache or refresh anything itself — that's entirely the external tool's job.
 
+## TLS verification and proxies
+
+For local or otherwise privately-issued endpoints, `-k` / `--insecure-skip-tls-verify` disables TLS certificate and hostname verification. Requests can be routed through a proxy with `-s` / `--proxy`:
+
+```sh
+athenzctl -k -s 127.0.0.1:1080 get domains
+athenzctl --proxy https://proxy.example:8443 get domains
+```
+
+The bare `host:port` form is treated as SOCKS5. `socks5://`, `http://`, and `https://` URLs are also accepted, including URL userinfo for proxy authentication. These options apply to both ZMS and ZTS. To save them in a context, use `config set-context --insecure-skip-tls-verify --proxy ...`; command-line values take precedence over context values.
+
 ## Local e2e (Gherkin / godog)
 
 End-to-end tests run each subcommand in-process against a real Athenz stack spun up locally by [ctyano/athenz-distribution](https://github.com/ctyano/athenz-distribution) via Docker Compose. Scenarios are written in Gherkin (`test/e2e/features/*.feature`) and executed by [godog](https://github.com/cucumber/godog).

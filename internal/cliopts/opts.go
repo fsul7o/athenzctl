@@ -18,10 +18,14 @@ import (
 
 // Options mirrors every persistent flag on the root command.
 type Options struct {
-	ConfigPath  string
-	ContextName string
-	Domain      string
-	Output      string
+	ConfigPath               string
+	ContextName              string
+	Domain                   string
+	Output                   string
+	InsecureSkipTLSVerify    bool
+	InsecureSkipTLSVerifySet bool
+	ProxyURL                 string
+	ProxyURLSet              bool
 }
 
 // ResolvePath returns the config file path, honoring --config, then
@@ -92,7 +96,7 @@ func (o *Options) LoadSelectedContext() (*config.Context, error) {
 
 // ZMSClient builds an authenticated ZMS client for the resolved context.
 func (o *Options) ZMSClient() (*zms.ZMSClient, error) {
-	ctx, err := o.LoadContext()
+	ctx, err := o.connectionContext()
 	if err != nil {
 		return nil, err
 	}
@@ -101,11 +105,29 @@ func (o *Options) ZMSClient() (*zms.ZMSClient, error) {
 
 // ZTSClient builds an authenticated ZTS client for the resolved context.
 func (o *Options) ZTSClient() (*zts.ZTSClient, error) {
-	ctx, err := o.LoadContext()
+	ctx, err := o.connectionContext()
 	if err != nil {
 		return nil, err
 	}
 	return client.NewZTSClient(ctx)
+}
+
+// connectionContext returns a copy of the selected context with any
+// command-line connection overrides applied. Keeping the copy local ensures
+// one invocation cannot mutate the loaded configuration.
+func (o *Options) connectionContext() (*config.Context, error) {
+	ctx, err := o.LoadContext()
+	if err != nil {
+		return nil, err
+	}
+	copy := *ctx
+	if o.InsecureSkipTLSVerifySet {
+		copy.InsecureSkipTLSVerify = o.InsecureSkipTLSVerify
+	}
+	if o.ProxyURLSet {
+		copy.ProxyURL = o.ProxyURL
+	}
+	return &copy, nil
 }
 
 // RequireDomain returns Options.Domain or an error if it is empty.

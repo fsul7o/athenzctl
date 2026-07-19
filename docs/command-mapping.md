@@ -35,9 +35,10 @@ athenzctl centralizes connection targets and credentials in a **kubeconfig-style
 | zts-accesstoken/zts-svccert/zts-rolecert: `-zts` | `config set-context --zts-url` |
 | zms-cli: `-cert`/`-key`; each zts tool: `-svc-cert-file`/`-svc-key-file` | `config set-context --cert`/`--key` |
 | zms-cli: `-c cacert_file`; each zts tool: `-cacert`/`-svc-cacert-file` | `config set-context --ca-cert` |
+| zms-cli: `-k` / `-s host:port` | `-k`/`--insecure-skip-tls-verify` and `-s`/`--proxy`; persist with `config set-context --insecure-skip-tls-verify` / `--proxy`. Applies to ZMS and ZTS; bare `host:port` is SOCKS5 and `socks5://`, `http://`, and `https://` URLs are supported |
 | zms-cli: `-f ntoken_file` / `-i identity` (NToken auth); each zts tool: `-ntoken-file` | **Out of scope** (athenzctl only supports mTLS or `auth-mode: exec`; NToken and legacy role-token issuance are not supported — see README) |
 | (none) | `config set-context --auth-mode exec --exec-command ... --exec-arg ... --exec-env ... --exec-cert-path ... --exec-key-path ...` (obtains a fresh certificate via an external command each invocation; intended to pair with tools like `ctyano/athenz-user-cert`) |
-| (none — zms-cli only has `-s host:port` for a SOCKS5 proxy) | `config set-context --zms-server-name`/`--zts-server-name` (TLS SNI/verification-name override; used e.g. for local e2e) |
+| (none) | `config set-context --zms-server-name`/`--zts-server-name` (TLS SNI/verification-name override; used e.g. for local e2e) |
 | Switching between multiple contexts (no such concept in the legacy tools) | `config use-context` / `config get-contexts` / `config current-context` / `config delete-context` / `config view` |
 
 ---
@@ -53,11 +54,11 @@ athenzctl centralizes connection targets and credentials in a **kubeconfig-style
 | `-d domain` | Domain scope | `-d`/`--domain` (global persistent flag) |
 | `-e skip_errors` | Skip errors during `import-domain` | No equivalent (`import-domain` itself is unsupported) |
 | `-f ntoken_file` / `-i identity` | NToken auth | **Out of scope** (NToken not supported) |
-| `-k` | Disable TLS peer verification | No equivalent (no explicit disable flag; falls back to the system CA pool when `--ca-cert` is omitted) |
+| `-k` | Disable TLS peer verification | `-k`/`--insecure-skip-tls-verify`; can also be stored in context with `config set-context --insecure-skip-tls-verify` |
 | `-o output_format` (json/yaml/manualYaml) | Output format | `-o/--output` (table/wide/json/yaml — different meaning and default) |
 | `-overwrite` | Overwrite without existence checks | No equivalent (`create` errors if the resource already exists; `edit`/`patch` are explicit update operations) |
 | `-r resource_owner` | Stamp resource-owner metadata | No equivalent (resource-ownership metadata is unimplemented; see below) |
-| `-s host:port` | SOCKS5 proxy | No equivalent |
+| `-s host:port` | SOCKS5 proxy | `-s`/`--proxy host:port`; also accepts `socks5://`, `http://`, and `https://` proxy URLs |
 | `-v` | Verbose (full resource names) | `-o wide` is close but not an exact match |
 | `-x` | Omit header name in `get-user-token` output | No equivalent (`get-user-token` itself is out of scope) |
 | `-z zms_url` | ZMS URL | `config set-context --zms-url` |
