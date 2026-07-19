@@ -4,10 +4,10 @@ import "testing"
 
 func TestParseServiceKey(t *testing.T) {
 	cases := []struct {
-		in       string
-		wantSvc  string
-		wantKey  string
-		wantErr  bool
+		in      string
+		wantSvc string
+		wantKey string
+		wantErr bool
 	}{
 		{"myservice", "myservice", "", false},
 		{"myservice:v0", "myservice", "v0", false},

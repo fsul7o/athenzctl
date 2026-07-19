@@ -9,8 +9,8 @@ import (
 
 func TestApplyWhitelist_TopLevel(t *testing.T) {
 	src := map[string]any{
-		"name":     "admins",
-		"modified": "2026-01-01T00:00:00Z",
+		"name":      "admins",
+		"modified":  "2026-01-01T00:00:00Z",
 		"selfServe": true,
 	}
 	wl := Whitelist{"name": nil, "selfServe": nil}
@@ -26,9 +26,9 @@ func TestApplyWhitelist_TopLevel(t *testing.T) {
 
 func TestApplyWhitelist_NestedMap(t *testing.T) {
 	src := map[string]any{
-		"name": "read-access",
+		"name":              "read-access",
 		"resourceOwnership": map[string]any{"role": "user.owner"},
-		"metadata": map[string]any{"description": "readers", "internal": "x"},
+		"metadata":          map[string]any{"description": "readers", "internal": "x"},
 	}
 	wl := Whitelist{
 		"name":     nil,
