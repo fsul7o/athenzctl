@@ -52,6 +52,9 @@ var resourceOperations = map[string][]string{
 		"domain-meta", "quota", "role", "policy", "policyversion", "service",
 		"group", "role-meta", "group-meta",
 	},
+	"athenzctl lookup": {
+		"domain",
+	},
 }
 
 func initializeCoverage() {

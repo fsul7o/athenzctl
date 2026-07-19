@@ -166,6 +166,75 @@ func (w *world) aDomainExists(name string) error {
 	return nil
 }
 
+func (w *world) aDomainTagExists(tagKey, tagValue, domain string) error {
+	domain = w.expand(domain)
+	zc, err := zmsClient()
+	if err != nil {
+		return err
+	}
+	d, err := zc.GetDomain(zms.DomainName(domain))
+	if err != nil {
+		return fmt.Errorf("get domain %s: %w", domain, err)
+	}
+
+	// Preserve the existing metadata because PutDomainMeta accepts the full
+	// metadata object. The generated ZMS model represents each tag as a
+	// TagValueList rather than a plain string value.
+	var meta zms.DomainMeta
+	raw, err := json.Marshal(d)
+	if err != nil {
+		return fmt.Errorf("marshal domain %s: %w", domain, err)
+	}
+	if err := json.Unmarshal(raw, &meta); err != nil {
+		return fmt.Errorf("unmarshal domain %s metadata: %w", domain, err)
+	}
+	if meta.Tags == nil {
+		meta.Tags = make(map[zms.TagKey]*zms.TagValueList)
+	}
+	meta.Tags[zms.TagKey(tagKey)] = &zms.TagValueList{
+		List: []zms.TagCompoundValue{zms.TagCompoundValue(tagValue)},
+	}
+	if err := zc.PutDomainMeta(zms.DomainName(domain), "", "", &meta); err != nil {
+		return fmt.Errorf("set domain %s tag: %w", domain, err)
+	}
+	return nil
+}
+
+func (w *world) aDomainSystemAttributeExists(attribute, value, domain string) error {
+	domain = w.expand(domain)
+	zc, err := zmsClient()
+	if err != nil {
+		return err
+	}
+
+	meta := &zms.DomainMeta{}
+	switch strings.ToLower(attribute) {
+	case "account":
+		meta.Account = value
+	case "azuresubscription":
+		// ZMS validates all Azure fields together when setting the
+		// subscription system attribute.
+		meta.AzureSubscription = value
+		meta.AzureTenant = value + "-tenant"
+		meta.AzureClient = value + "-client"
+	case "gcpproject":
+		// ZMS validates the project id and project number together.
+		meta.GcpProject = value
+		meta.GcpProjectNumber = "123456789"
+	case "productid":
+		meta.ProductId = value
+	case "businessservice":
+		meta.BusinessService = value
+	default:
+		return fmt.Errorf("unsupported domain system attribute %q", attribute)
+	}
+
+	if err := zc.PutDomainSystemMeta(zms.DomainName(domain), zms.SimpleName(attribute), "", meta); err != nil {
+		return fmt.Errorf("set domain %s system attribute %s: %w", domain, attribute, err)
+	}
+	return nil
+}
+
 func (w *world) aRoleExists(role, domain string) error {
 	domain = w.expand(domain)
 	admin, err := adminPrincipal()
@@ -398,6 +467,12 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 		return nil
 	})
 	ctx.Step(`^a domain "([^"]+)" exists$`, func(name string) error { return w.aDomainExists(name) })
+	ctx.Step(`^a domain system attribute "([^"]+)" with value "([^"]+)" exists in domain "([^"]+)"$`, func(attribute, value, domain string) error {
+		return w.aDomainSystemAttributeExists(attribute, value, domain)
+	})
+	ctx.Step(`^a domain tag "([^"]+)" with value "([^"]+)" exists in domain "([^"]+)"$`, func(key, value, domain string) error {
+		return w.aDomainTagExists(key, value, domain)
+	})
 	ctx.Step(`^a role "([^"]+)" exists in domain "([^"]+)"$`, func(r, d string) error { return w.aRoleExists(r, d) })
 	ctx.Step(`^a service "([^"]+)" exists in domain "([^"]+)"$`, func(s, d string) error { return w.aServiceExists(s, d) })
 	ctx.Step(`^a policy "([^"]+)" exists in domain "([^"]+)"$`, func(p, d string) error { return w.aPolicyExists(p, d) })
