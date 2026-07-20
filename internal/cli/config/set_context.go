@@ -22,11 +22,25 @@ func newSetContext(opts *Options) *cobra.Command {
 		proxyURL              string
 		authMode              string
 		// exec fields
-		execCommand            string
-		execArgs               []string
-		execEnv                []string
-		execCertPath           string
-		execKeyPath            string
+		execCommand  string
+		execArgs     []string
+		execEnv      []string
+		execCertPath string
+		execKeyPath  string
+		// ntoken-auth fields
+		ntokenAuthDomain     string
+		ntokenAuthService    string
+		ntokenAuthPrivateKey string
+		ntokenAuthKeyID      string
+		ntokenAuthHeader     string
+		// copperargos-auth fields
+		copperArgosAuthDomain          string
+		copperArgosAuthService         string
+		copperArgosAuthProvider        string
+		copperArgosAuthInstance        string
+		copperArgosAuthAttestationData string
+		// shared by ntoken-auth/copperargos-auth (a context only uses one auth-mode at a time)
+		authCacheDir           string
 		serviceCertSubjC       string
 		serviceCertSubjP       string
 		serviceCertSubjO       string
@@ -96,6 +110,9 @@ func newSetContext(opts *Options) *cobra.Command {
 			}
 			if cmd.Flags().Changed("auth-mode") {
 				ctx.AuthMode = authMode
+			}
+			if cmd.Flags().Changed("auth-cache-dir") {
+				ctx.CacheDir = authCacheDir
 			}
 
 			serviceCertChanged := anyFlagChanged(cmd,
@@ -234,6 +251,54 @@ func newSetContext(opts *Options) *cobra.Command {
 				}
 			}
 
+			ntokenAuthChanged := anyFlagChanged(cmd,
+				"ntoken-auth-domain", "ntoken-auth-service", "ntoken-auth-private-key",
+				"ntoken-auth-key-id", "ntoken-auth-hdr")
+			if ntokenAuthChanged && ctx.NTokenAuth == nil {
+				ctx.NTokenAuth = &cfg.NTokenAuthConfig{}
+			}
+			if ctx.NTokenAuth != nil {
+				if cmd.Flags().Changed("ntoken-auth-domain") {
+					ctx.NTokenAuth.Domain = ntokenAuthDomain
+				}
+				if cmd.Flags().Changed("ntoken-auth-service") {
+					ctx.NTokenAuth.Service = ntokenAuthService
+				}
+				if cmd.Flags().Changed("ntoken-auth-private-key") {
+					ctx.NTokenAuth.PrivateKeyPath = ntokenAuthPrivateKey
+				}
+				if cmd.Flags().Changed("ntoken-auth-key-id") {
+					ctx.NTokenAuth.KeyID = ntokenAuthKeyID
+				}
+				if cmd.Flags().Changed("ntoken-auth-hdr") {
+					ctx.NTokenAuth.Header = ntokenAuthHeader
+				}
+			}
+
+			copperArgosAuthChanged := anyFlagChanged(cmd,
+				"copperargos-auth-domain", "copperargos-auth-service", "copperargos-auth-provider",
+				"copperargos-auth-instance", "copperargos-auth-attestation-data")
+			if copperArgosAuthChanged && ctx.CopperArgosAuth == nil {
+				ctx.CopperArgosAuth = &cfg.CopperArgosAuthConfig{}
+			}
+			if ctx.CopperArgosAuth != nil {
+				if cmd.Flags().Changed("copperargos-auth-domain") {
+					ctx.CopperArgosAuth.Domain = copperArgosAuthDomain
+				}
+				if cmd.Flags().Changed("copperargos-auth-service") {
+					ctx.CopperArgosAuth.Service = copperArgosAuthService
+				}
+				if cmd.Flags().Changed("copperargos-auth-provider") {
+					ctx.CopperArgosAuth.Provider = copperArgosAuthProvider
+				}
+				if cmd.Flags().Changed("copperargos-auth-instance") {
+					ctx.CopperArgosAuth.Instance = copperArgosAuthInstance
+				}
+				if cmd.Flags().Changed("copperargos-auth-attestation-data") {
+					ctx.CopperArgosAuth.AttestationDataPath = copperArgosAuthAttestationData
+				}
+			}
+
 			c.Upsert(ctx)
 			if err := cfg.Save(path, c); err != nil {
 				return err
@@ -255,13 +320,24 @@ func newSetContext(opts *Options) *cobra.Command {
 	cmd.Flags().StringVar(&ztsServerName, "zts-server-name", "", "TLS ServerName override for ZTS (SNI + hostname verification)")
 	cmd.Flags().BoolVarP(&insecureSkipTLSVerify, "insecure-skip-tls-verify", "k", false, "disable TLS certificate and hostname verification")
 	cmd.Flags().StringVarP(&proxyURL, "proxy", "s", "", "proxy URL (host:port for SOCKS5, or socks5/http/https URL)")
-	cmd.Flags().StringVar(&authMode, "auth-mode", "", "authentication mode: \"\" or \"mtls\" (default), \"exec\" (obtain the client cert by execing an external command that places it at a known path)")
+	cmd.Flags().StringVar(&authMode, "auth-mode", "", "authentication mode: \"\" or \"mtls\" (default), \"exec\" (obtain the client cert by execing an external command that places it at a known path), \"ntoken\" (mint a fresh cert on every invocation via a ZMS-registered key pair), \"copperargos\" (register/self-refresh a cert via a prepared attestation-data file)")
 	// exec flags
 	cmd.Flags().StringVar(&execCommand, "exec-command", "", "exec: path to the external command that places a fresh cert/key at exec-cert-path/exec-key-path")
 	cmd.Flags().StringArrayVar(&execArgs, "exec-arg", nil, "exec: argument to pass to the exec command (repeatable, replaces the full list when set)")
 	cmd.Flags().StringArrayVar(&execEnv, "exec-env", nil, "exec: KEY=VALUE environment variable to set for the exec command (repeatable, replaces the full map when set)")
 	cmd.Flags().StringVar(&execCertPath, "exec-cert-path", "", "exec: path the exec command writes the cert PEM to, read back after it exits")
 	cmd.Flags().StringVar(&execKeyPath, "exec-key-path", "", "exec: path the exec command writes the key PEM to, read back after it exits")
+	cmd.Flags().StringVar(&ntokenAuthDomain, "ntoken-auth-domain", "", "ntoken: domain of the service identity to mint a certificate for")
+	cmd.Flags().StringVar(&ntokenAuthService, "ntoken-auth-service", "", "ntoken: name of the service identity to mint a certificate for")
+	cmd.Flags().StringVar(&ntokenAuthPrivateKey, "ntoken-auth-private-key", "", "ntoken: path to the ZMS-registered private key PEM")
+	cmd.Flags().StringVar(&ntokenAuthKeyID, "ntoken-auth-key-id", "", "ntoken: ZMS public key version for --ntoken-auth-private-key")
+	cmd.Flags().StringVar(&ntokenAuthHeader, "ntoken-auth-hdr", "", "ntoken: HTTP header the signed NToken is sent under (default: \"Athenz-Principal-Auth\", mirrors zts-svccert -hdr)")
+	cmd.Flags().StringVar(&copperArgosAuthDomain, "copperargos-auth-domain", "", "copperargos: domain of the service identity to register")
+	cmd.Flags().StringVar(&copperArgosAuthService, "copperargos-auth-service", "", "copperargos: name of the service identity to register")
+	cmd.Flags().StringVar(&copperArgosAuthProvider, "copperargos-auth-provider", "", "copperargos: Athenz provider service name")
+	cmd.Flags().StringVar(&copperArgosAuthInstance, "copperargos-auth-instance", "", "copperargos: instance ID to register")
+	cmd.Flags().StringVar(&copperArgosAuthAttestationData, "copperargos-auth-attestation-data", "", "copperargos: path to a prepared attestation-data file (e.g. from `issue instance-register-token --out`)")
+	cmd.Flags().StringVar(&authCacheDir, "auth-cache-dir", "", "ntoken/copperargos: cache directory for the minted/issued cert+key (default: ~/.athenzctl/cache/<context>/<mode>)")
 	cmd.Flags().StringVar(&serviceCertSubjC, "servicecert-subj-c", "", "servicecert default CSR Subject Country")
 	cmd.Flags().StringVar(&serviceCertSubjP, "servicecert-subj-p", "", "servicecert default CSR Subject Province")
 	cmd.Flags().StringVar(&serviceCertSubjO, "servicecert-subj-o", "", "servicecert default CSR Subject Organization")

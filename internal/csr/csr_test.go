@@ -1,4 +1,4 @@
-package issue
+package csr_test
 
 import (
 	"crypto/rand"
@@ -6,15 +6,17 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"testing"
+
+	"github.com/fsul7o/athenzctl/internal/csr"
 )
 
-func TestNewCSRSubjectOmitsEmptyAttributes(t *testing.T) {
+func TestNewSubjectOmitsEmptyAttributes(t *testing.T) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatal(err)
 	}
-	signer := &csrSigner{key: key, algorithm: x509.SHA256WithRSA}
-	subj := newCSRSubject("service.example", "", "", "", "")
+	signer := &csr.Signer{Key: key, Algorithm: x509.SHA256WithRSA}
+	subj := csr.NewSubject("service.example", "", "", "", "")
 	tests := []struct {
 		name string
 		make func() (string, error)
@@ -22,13 +24,13 @@ func TestNewCSRSubjectOmitsEmptyAttributes(t *testing.T) {
 		{
 			name: "service certificate",
 			make: func() (string, error) {
-				return generateCSR(signer, subj, "service.example", "", "", "")
+				return csr.GenerateServiceCSR(signer, subj, "service.example", "", "", "")
 			},
 		},
 		{
 			name: "role certificate",
 			make: func() (string, error) {
-				return generateRoleCSR(signer, subj, "service.example", "example.service", "example", "", "")
+				return csr.GenerateRoleCSR(signer, subj, "service.example", "example.service", "example", "", "")
 			},
 		},
 	}
@@ -43,19 +45,19 @@ func TestNewCSRSubjectOmitsEmptyAttributes(t *testing.T) {
 			if block == nil {
 				t.Fatal("generated CSR did not contain a PEM block")
 			}
-			csr, err := x509.ParseCertificateRequest(block.Bytes)
+			req, err := x509.ParseCertificateRequest(block.Bytes)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got := csr.Subject.String(); got != "CN=service.example" {
+			if got := req.Subject.String(); got != "CN=service.example" {
 				t.Fatalf("unexpected subject: %q", got)
 			}
 		})
 	}
 }
 
-func TestNewCSRSubjectIncludesNonEmptyAttributes(t *testing.T) {
-	subj := newCSRSubject("service.example", "US", "Tokyo", "Example Org", "Athenz")
+func TestNewSubjectIncludesNonEmptyAttributes(t *testing.T) {
+	subj := csr.NewSubject("service.example", "US", "Tokyo", "Example Org", "Athenz")
 
 	if len(subj.Country) != 1 || subj.Country[0] != "US" {
 		t.Fatalf("unexpected country: %#v", subj.Country)

@@ -13,8 +13,11 @@ import (
 
 // newInstanceRegisterToken fetches an instance register token from ZTS.
 // The token is a one-time bootstrap credential valid for 30 minutes that is
-// used as attestation data in a subsequent `issue servicecert --provider ...`
-// call (see zts-svccert -get-instance-register-token).
+// used as attestation data for a subsequent Copper Argos provider
+// registration call (see zts-svccert -get-instance-register-token, or
+// athenzctl's own `config set-context --auth-mode copperargos
+// --copperargos-auth-attestation-data`, which consumes a token saved via
+// --out here).
 func newInstanceRegisterToken(opts *cliopts.Options) *cobra.Command {
 	var (
 		service  string
