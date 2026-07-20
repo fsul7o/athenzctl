@@ -95,12 +95,10 @@ func writeOne(cmd *cobra.Command, format printer.Format, jws *zts.JWSPolicyData)
 	if jws == nil {
 		return errors.New("ZTS returned no policy data")
 	}
-	switch format {
-	case printer.FormatYAML:
-		return printer.WriteYAML(cmd.OutOrStdout(), jws)
-	default:
-		return printer.WriteJSON(cmd.OutOrStdout(), jws)
+	if handled, err := printer.WriteStructured(cmd.OutOrStdout(), format, jws); handled || err != nil {
+		return err
 	}
+	return printer.WriteJSON(cmd.OutOrStdout(), jws)
 }
 
 func writePolicyFile(dir, domain string, jws *zts.JWSPolicyData) error {

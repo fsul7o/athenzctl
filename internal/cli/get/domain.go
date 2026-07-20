@@ -15,7 +15,7 @@ func getDomain(w io.Writer, zc *zms.ZMSClient, name string, format printer.Forma
 		if err != nil {
 			return cliopts.WrapErr(err)
 		}
-		if done, err := renderStructured(w, format, d); done || err != nil {
+		if done, err := printer.WriteStructured(w, format, d); done || err != nil {
 			return err
 		}
 		return printer.WriteTable(w, printer.Table{
@@ -27,7 +27,7 @@ func getDomain(w io.Writer, zc *zms.ZMSClient, name string, format printer.Forma
 	if err != nil {
 		return cliopts.WrapErr(err)
 	}
-	if done, err := renderStructured(w, format, list); done || err != nil {
+	if done, err := printer.WriteStructured(w, format, list); done || err != nil {
 		return err
 	}
 	rows := make([][]string, 0, len(list.Names))

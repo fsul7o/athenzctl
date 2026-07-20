@@ -35,7 +35,7 @@ func getMembership(cmd *cobra.Command, w io.Writer, zc *zms.ZMSClient, domain, m
 		if err != nil {
 			return cliopts.WrapErr(err)
 		}
-		if done, err := renderStructured(w, format, m); done || err != nil {
+		if done, err := printer.WriteStructured(w, format, m); done || err != nil {
 			return err
 		}
 		return printer.WriteTable(w, printer.Table{
@@ -49,7 +49,7 @@ func getMembership(cmd *cobra.Command, w io.Writer, zc *zms.ZMSClient, domain, m
 		if err != nil {
 			return cliopts.WrapErr(err)
 		}
-		if done, err := renderStructured(w, format, m); done || err != nil {
+		if done, err := printer.WriteStructured(w, format, m); done || err != nil {
 			return err
 		}
 		return printer.WriteTable(w, printer.Table{
@@ -63,7 +63,7 @@ func getMembership(cmd *cobra.Command, w io.Writer, zc *zms.ZMSClient, domain, m
 		if err != nil {
 			return cliopts.WrapErr(err)
 		}
-		if done, err := renderStructured(w, format, r); done || err != nil {
+		if done, err := printer.WriteStructured(w, format, r); done || err != nil {
 			return err
 		}
 		rows := make([][]string, 0, len(r.RoleMembers))
@@ -79,7 +79,7 @@ func getMembership(cmd *cobra.Command, w io.Writer, zc *zms.ZMSClient, domain, m
 		if err != nil {
 			return cliopts.WrapErr(err)
 		}
-		if done, err := renderStructured(w, format, g); done || err != nil {
+		if done, err := printer.WriteStructured(w, format, g); done || err != nil {
 			return err
 		}
 		rows := make([][]string, 0, len(g.GroupMembers))

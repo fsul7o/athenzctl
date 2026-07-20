@@ -69,85 +69,41 @@ principal.`,
 			if err != nil {
 				return err
 			}
+			domain, err := opts.ResolveResourceDomain(kind, name)
+			if err != nil {
+				return err
+			}
 			out := cmd.OutOrStdout()
 
 			switch kind {
 			case resource.KindDomain:
 				return describeDomain(out, zc, name, format)
 			case resource.KindDomainMeta:
-				dom, err := opts.ResolveDomain(name)
-				if err != nil {
-					return err
-				}
-				return describeDomainMeta(out, zc, dom, format)
+				return describeDomainMeta(out, zc, domain, format)
 			case resource.KindRole:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return describeRole(out, zc, dom, name, format)
+				return describeRole(out, zc, domain, name, format)
 			case resource.KindRoleMeta:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return describeRoleMeta(out, zc, dom, name, format)
+				return describeRoleMeta(out, zc, domain, name, format)
 			case resource.KindPolicy:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return describePolicy(out, zc, dom, name, format)
+				return describePolicy(out, zc, domain, name, format)
 			case resource.KindPolicyVersion:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return describePolicyVersion(out, zc, dom, name, format)
+				return describePolicyVersion(out, zc, domain, name, format)
 			case resource.KindService:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return describeService(out, zc, dom, name, format)
+				return describeService(out, zc, domain, name, format)
 			case resource.KindServiceKey:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return describeServiceKey(out, zc, dom, name, format)
+				return describeServiceKey(out, zc, domain, name, format)
 			case resource.KindGroup:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return describeGroup(out, zc, dom, name, format)
+				return describeGroup(out, zc, domain, name, format)
 			case resource.KindGroupMeta:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return describeGroupMeta(out, zc, dom, name, format)
+				return describeGroupMeta(out, zc, domain, name, format)
 			case resource.KindMembership:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return describeMembership(cmd, out, zc, dom, name, format)
+				return describeMembership(cmd, out, zc, domain, name, format)
 			case resource.KindTemplate:
 				return describeTemplate(out, zc, name, format)
 			case resource.KindDomainTemplate:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return describeDomainTemplate(out, zc, dom, name, format)
+				return describeDomainTemplate(out, zc, domain, name, format)
 			case resource.KindQuota:
-				dom, err := opts.ResolveDomain(name)
-				if err != nil {
-					return err
-				}
-				return describeQuota(out, zc, dom, format)
+				return describeQuota(out, zc, domain, format)
 			default:
 				return fmt.Errorf("`describe %s` is not supported", kind)
 			}
@@ -162,11 +118,8 @@ principal.`,
 // render dispatches on -o: json/yaml emit the raw object; anything else
 // (default, table, wide) goes through the human-readable pretty printer.
 func render(w io.Writer, format printer.Format, v any) error {
-	switch format {
-	case printer.FormatJSON:
-		return printer.WriteJSON(w, v)
-	case printer.FormatYAML:
-		return printer.WriteYAML(w, v)
+	if handled, err := printer.WriteStructured(w, format, v); handled || err != nil {
+		return err
 	}
 	return printer.WritePretty(w, v)
 }

@@ -87,11 +87,8 @@ func lookupDomain(w io.Writer, zc *zms.ZMSClient, selector domainSelector, forma
 	if err != nil {
 		return cliopts.WrapErr(err)
 	}
-	if format == printer.FormatJSON {
-		return printer.WriteJSON(w, list)
-	}
-	if format == printer.FormatYAML {
-		return printer.WriteYAML(w, list)
+	if handled, err := printer.WriteStructured(w, format, list); handled || err != nil {
+		return err
 	}
 
 	rows := make([][]string, 0, len(list.Names))

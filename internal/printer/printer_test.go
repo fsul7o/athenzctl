@@ -63,3 +63,33 @@ func TestWriteJSONYAML(t *testing.T) {
 		t.Fatalf("yaml output missing entry: %s", yb.String())
 	}
 }
+
+func TestWriteStructured(t *testing.T) {
+	obj := map[string]any{"a": 1}
+	tests := []struct {
+		name    string
+		format  Format
+		handled bool
+		want    string
+	}{
+		{name: "json", format: FormatJSON, handled: true, want: `"a": 1`},
+		{name: "yaml", format: FormatYAML, handled: true, want: "a: 1"},
+		{name: "table", format: FormatTable, handled: false},
+		{name: "wide", format: FormatWide, handled: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var out bytes.Buffer
+			handled, err := WriteStructured(&out, tt.format, obj)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if handled != tt.handled {
+				t.Fatalf("handled = %t, want %t", handled, tt.handled)
+			}
+			if !strings.Contains(out.String(), tt.want) {
+				t.Fatalf("output = %q, want substring %q", out.String(), tt.want)
+			}
+		})
+	}
+}

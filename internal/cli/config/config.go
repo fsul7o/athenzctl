@@ -3,8 +3,6 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	cfg "github.com/fsul7o/athenzctl/internal/config"
@@ -50,8 +48,4 @@ func loadConfig(opts *Options) (*cfg.Config, string, error) {
 		return nil, path, err
 	}
 	return c, path, nil
-}
-
-func printfln(cmd *cobra.Command, format string, args ...any) {
-	fmt.Fprintf(cmd.OutOrStdout(), format+"\n", args...)
 }

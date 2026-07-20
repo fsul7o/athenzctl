@@ -15,7 +15,7 @@ func getQuota(w io.Writer, zc *zms.ZMSClient, domain string, format printer.Form
 	if err != nil {
 		return cliopts.WrapErr(err)
 	}
-	if done, err := renderStructured(w, format, q); done || err != nil {
+	if done, err := printer.WriteStructured(w, format, q); done || err != nil {
 		return err
 	}
 	return printer.WriteTable(w, printer.Table{

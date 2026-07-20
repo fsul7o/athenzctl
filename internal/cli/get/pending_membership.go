@@ -18,7 +18,7 @@ func getPendingMembership(w io.Writer, zc *zms.ZMSClient, domain string, isGroup
 		if err != nil {
 			return cliopts.WrapErr(err)
 		}
-		if done, err := renderStructured(w, format, list); done || err != nil {
+		if done, err := printer.WriteStructured(w, format, list); done || err != nil {
 			return err
 		}
 		return renderPendingGroupTable(w, list)
@@ -27,7 +27,7 @@ func getPendingMembership(w io.Writer, zc *zms.ZMSClient, domain string, isGroup
 	if err != nil {
 		return cliopts.WrapErr(err)
 	}
-	if done, err := renderStructured(w, format, list); done || err != nil {
+	if done, err := printer.WriteStructured(w, format, list); done || err != nil {
 		return err
 	}
 	return renderPendingRoleTable(w, list)

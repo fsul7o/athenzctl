@@ -35,11 +35,8 @@ func newResourceCmd(opts *cliopts.Options) *cobra.Command {
 				return cliopts.WrapErr(err)
 			}
 			out := cmd.OutOrStdout()
-			switch format {
-			case printer.FormatJSON:
-				return printer.WriteJSON(out, list)
-			case printer.FormatYAML:
-				return printer.WriteYAML(out, list)
+			if handled, err := printer.WriteStructured(out, format, list); handled || err != nil {
+				return err
 			}
 			rows := make([][]string, 0)
 			for _, r := range list.Resources {

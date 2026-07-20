@@ -41,11 +41,8 @@ func newAccessCmd(opts *cliopts.Options) *cobra.Command {
 				return cliopts.WrapErr(err)
 			}
 			out := cmd.OutOrStdout()
-			switch format {
-			case printer.FormatJSON:
-				return printer.WriteJSON(out, access)
-			case printer.FormatYAML:
-				return printer.WriteYAML(out, access)
+			if handled, err := printer.WriteStructured(out, format, access); handled || err != nil {
+				return err
 			}
 			verdict := "DENIED"
 			if access.Granted {

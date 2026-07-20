@@ -15,7 +15,7 @@ func getService(w io.Writer, zc *zms.ZMSClient, domain, name string, format prin
 		if err != nil {
 			return cliopts.WrapErr(err)
 		}
-		if done, err := renderStructured(w, format, s); done || err != nil {
+		if done, err := printer.WriteStructured(w, format, s); done || err != nil {
 			return err
 		}
 		return renderServiceTable(w, []*zms.ServiceIdentity{s})
@@ -24,7 +24,7 @@ func getService(w io.Writer, zc *zms.ZMSClient, domain, name string, format prin
 	if err != nil {
 		return cliopts.WrapErr(err)
 	}
-	if done, err := renderStructured(w, format, list); done || err != nil {
+	if done, err := printer.WriteStructured(w, format, list); done || err != nil {
 		return err
 	}
 	return renderServiceTable(w, list.List)

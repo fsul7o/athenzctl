@@ -68,3 +68,17 @@ func WriteYAML(w io.Writer, v any) error {
 	defer enc.Close()
 	return enc.Encode(v)
 }
+
+// WriteStructured writes v when format is JSON or YAML. The returned handled
+// value is false for table-oriented formats so callers can apply their own
+// fallback renderer.
+func WriteStructured(w io.Writer, format Format, v any) (handled bool, err error) {
+	switch format {
+	case FormatJSON:
+		return true, WriteJSON(w, v)
+	case FormatYAML:
+		return true, WriteYAML(w, v)
+	default:
+		return false, nil
+	}
+}

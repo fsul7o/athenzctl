@@ -15,7 +15,7 @@ func getPolicy(w io.Writer, zc *zms.ZMSClient, domain, name string, format print
 		if err != nil {
 			return cliopts.WrapErr(err)
 		}
-		if done, err := renderStructured(w, format, p); done || err != nil {
+		if done, err := printer.WriteStructured(w, format, p); done || err != nil {
 			return err
 		}
 		return renderPolicyTable(w, []*zms.Policy{p})
@@ -24,7 +24,7 @@ func getPolicy(w io.Writer, zc *zms.ZMSClient, domain, name string, format print
 	if err != nil {
 		return cliopts.WrapErr(err)
 	}
-	if done, err := renderStructured(w, format, ps); done || err != nil {
+	if done, err := printer.WriteStructured(w, format, ps); done || err != nil {
 		return err
 	}
 	return renderPolicyTable(w, ps.List)

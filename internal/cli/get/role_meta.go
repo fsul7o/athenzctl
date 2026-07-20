@@ -23,7 +23,7 @@ func getRoleMeta(w io.Writer, zc *zms.ZMSClient, domain, name string, format pri
 	if err != nil {
 		return err
 	}
-	if done, err := renderStructured(w, format, meta); done || err != nil {
+	if done, err := printer.WriteStructured(w, format, meta); done || err != nil {
 		return err
 	}
 	return printer.WriteTable(w, printer.Table{

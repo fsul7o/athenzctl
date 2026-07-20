@@ -14,6 +14,7 @@ import (
 	"github.com/fsul7o/athenzctl/internal/client"
 	"github.com/fsul7o/athenzctl/internal/config"
 	"github.com/fsul7o/athenzctl/internal/printer"
+	"github.com/fsul7o/athenzctl/internal/resource"
 )
 
 // Options mirrors every persistent flag on the root command.
@@ -146,6 +147,20 @@ func (o *Options) ResolveDomain(nameArg string) (string, error) {
 		return nameArg, nil
 	}
 	return o.RequireDomain()
+}
+
+// ResolveResourceDomain applies the shared get/describe domain convention for
+// a resource kind. Domain and template are global resources; domain-meta and
+// quota accept NAME as the domain; all other kinds require --domain.
+func (o *Options) ResolveResourceDomain(kind resource.Kind, name string) (string, error) {
+	switch kind {
+	case resource.KindDomain, resource.KindTemplate:
+		return "", nil
+	case resource.KindDomainMeta, resource.KindQuota:
+		return o.ResolveDomain(name)
+	default:
+		return o.RequireDomain()
+	}
 }
 
 // Format resolves the -o flag.
