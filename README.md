@@ -11,6 +11,8 @@
 Homebrew Cask:
 
 ```sh
+brew tap fsul7o/athenzctl https://github.com/fsul7o/athenzctl
+brew trust --cask fsul7o/athenzctl/athenzctl
 brew install --cask fsul7o/athenzctl/athenzctl
 ```
 
