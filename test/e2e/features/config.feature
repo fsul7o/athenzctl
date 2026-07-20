@@ -52,7 +52,7 @@ Feature: athenzctl config
   Scenario: save every context connection option
     Given a fresh athenz stack
     And a unique context "e2e-options-context"
-    When I run athenzctl "config set-context $CONTEXT --zms-url https://zms.example.test/zms/v1 --zts-url https://zts.example.test/zts/v1 --cert $ADMIN_CERT --key $ADMIN_KEY --ca-cert $ADMIN_CA --zms-server-name zms.example.test --zts-server-name zts.example.test --auth-mode exec --exec-command /bin/true --exec-arg first --exec-arg second --exec-env E2E_OPTION=enabled --exec-cert-path $ADMIN_CERT --exec-key-path $ADMIN_KEY --servicecert-subj-c JP --servicecert-subj-p Tokyo --servicecert-subj-o ServiceOrg --servicecert-subj-ou Services --servicecert-spiffe=false --servicecert-spiffe-trust-domain service.trust --servicecert-dns-domain service.example --rolecert-subj-c US --rolecert-subj-p California --rolecert-subj-o RoleOrg --rolecert-subj-ou Roles --rolecert-spiffe=true --rolecert-spiffe-trust-domain role.trust --rolecert-dns-domain role.example"
+    When I run athenzctl "config set-context $CONTEXT --zms-url https://zms.example.test/zms/v1 --zts-url https://zts.example.test/zts/v1 --cert $ADMIN_CERT --key $ADMIN_KEY --ca-cert $ADMIN_CA --zms-server-name zms.example.test --zts-server-name zts.example.test --auth-mode exec --exec-command /bin/true --exec-arg first --exec-arg second --exec-env E2E_OPTION=enabled --exec-cert-path $ADMIN_CERT --exec-key-path $ADMIN_KEY --servicecert-subj-c JP --servicecert-subj-p Tokyo --servicecert-subj-o ServiceOrg --servicecert-subj-ou Services --servicecert-spiffe=false --servicecert-spiffe-trust-domain service.trust --servicecert-dns-domain service.example --servicecert-concat-intermediate-cert --servicecert-expiry-time 5 --servicecert-ip 10.1.1.1 --servicecert-signer-key-id svc-key --rolecert-subj-c US --rolecert-subj-p California --rolecert-subj-o RoleOrg --rolecert-subj-ou Roles --rolecert-spiffe=true --rolecert-spiffe-trust-domain role.trust --rolecert-dns-domain role.example --rolecert-concat-intermediate-cert --rolecert-cacert-bundle-name athenz --rolecert-expiry-time 10 --rolecert-ip 10.2.2.2 --rolecert-signer-key-id role-key"
     Then the command should succeed
     When I run athenzctl "config view"
     Then the command should succeed
@@ -62,6 +62,10 @@ Feature: athenzctl config
     And stdout should contain "rolecert"
     And stdout should contain "service.example"
     And stdout should contain "role.example"
+    And stdout should contain "concat-intermediate-cert"
+    And stdout should contain "cacert-bundle-name: athenz"
+    And stdout should contain "signer-key-id: svc-key"
+    And stdout should contain "signer-key-id: role-key"
 
   Scenario: use TLS and proxy connection flags
     Given a unique context "e2e-connection-flags"

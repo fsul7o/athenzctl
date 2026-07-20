@@ -36,6 +36,10 @@ builds:
       - -X github.com/fsul7o/athenzctl/internal/cli/issue.ServiceCertDefaultSubjectOrganizationalUnit={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_SERVICECERT_SUBJ_OU" "" }}
       - -X github.com/fsul7o/athenzctl/internal/cli/issue.ServiceCertDefaultSpiffe={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_SERVICECERT_SPIFFE" "" }}
       - -X github.com/fsul7o/athenzctl/internal/cli/issue.ServiceCertDefaultSpiffeTrustDomain={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_SERVICECERT_SPIFFE_TRUST_DOMAIN" "" }}
+      - -X github.com/fsul7o/athenzctl/internal/cli/issue.ServiceCertDefaultConcatIntermediateCert={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_SERVICECERT_CONCAT_INTERMEDIATE_CERT" "" }}
+      - -X github.com/fsul7o/athenzctl/internal/cli/issue.ServiceCertDefaultExpiryTime={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_SERVICECERT_EXPIRY_TIME" "" }}
+      - -X github.com/fsul7o/athenzctl/internal/cli/issue.ServiceCertDefaultIP={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_SERVICECERT_IP" "" }}
+      - -X github.com/fsul7o/athenzctl/internal/cli/issue.ServiceCertDefaultSignerKeyID={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_SERVICECERT_SIGNER_KEY_ID" "" }}
       - -X github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultDNSDomain={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_ROLECERT_DNS_DOMAIN" "" }}
       - -X github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultSubjectCountry={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_ROLECERT_SUBJ_C" "" }}
       - -X github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultSubjectProvince={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_ROLECERT_SUBJ_P" "" }}
@@ -43,6 +47,11 @@ builds:
       - -X github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultSubjectOrganizationalUnit={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_ROLECERT_SUBJ_OU" "" }}
       - -X github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultSpiffe={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_ROLECERT_SPIFFE" "" }}
       - -X github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultSpiffeTrustDomain={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_ROLECERT_SPIFFE_TRUST_DOMAIN" "" }}
+      - -X github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultConcatIntermediateCert={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_ROLECERT_CONCAT_INTERMEDIATE_CERT" "" }}
+      - -X github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultCACertBundleName={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_ROLECERT_CACERT_BUNDLE_NAME" "" }}
+      - -X github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultExpiryTime={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_ROLECERT_EXPIRY_TIME" "" }}
+      - -X github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultIP={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_ROLECERT_IP" "" }}
+      - -X github.com/fsul7o/athenzctl/internal/cli/issue.RoleCertDefaultSignerKeyID={{ envOrDefault "ATHENZCTL_ISSUE_DEFAULT_ROLECERT_SIGNER_KEY_ID" "" }}
 
 archives:
   - id: athenzctl
