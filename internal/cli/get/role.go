@@ -15,7 +15,7 @@ func getRole(w io.Writer, zc *zms.ZMSClient, domain, name string, format printer
 		if err != nil {
 			return cliopts.WrapErr(err)
 		}
-		if done, err := renderStructured(w, format, r); done || err != nil {
+		if done, err := printer.WriteStructured(w, format, r); done || err != nil {
 			return err
 		}
 		return renderRoleTable(w, []*zms.Role{r})
@@ -24,7 +24,7 @@ func getRole(w io.Writer, zc *zms.ZMSClient, domain, name string, format printer
 	if err != nil {
 		return cliopts.WrapErr(err)
 	}
-	if done, err := renderStructured(w, format, rs); done || err != nil {
+	if done, err := printer.WriteStructured(w, format, rs); done || err != nil {
 		return err
 	}
 	return renderRoleTable(w, rs.List)

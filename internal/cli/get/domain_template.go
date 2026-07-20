@@ -14,7 +14,7 @@ func getDomainTemplate(w io.Writer, zc *zms.ZMSClient, domain string, format pri
 	if err != nil {
 		return cliopts.WrapErr(err)
 	}
-	if done, err := renderStructured(w, format, list); done || err != nil {
+	if done, err := printer.WriteStructured(w, format, list); done || err != nil {
 		return err
 	}
 	rows := make([][]string, 0, len(list.TemplateNames))

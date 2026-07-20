@@ -62,9 +62,6 @@ install:
 clean:
 	rm -rf bin dist
 
-snapshot:
-	goreleaser release --snapshot --clean
-
 # Vendored athenz-distribution is treated as disposable (see e2e-clean): any
 # locally applied patches are reverted before pulling so `--ff-only` always
 # succeeds, then re-applied on top of the fresh checkout every time.

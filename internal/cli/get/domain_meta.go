@@ -20,7 +20,7 @@ func getDomainMeta(w io.Writer, zc *zms.ZMSClient, name string, format printer.F
 	if err != nil {
 		return err
 	}
-	if done, err := renderStructured(w, format, meta); done || err != nil {
+	if done, err := printer.WriteStructured(w, format, meta); done || err != nil {
 		return err
 	}
 	return renderDomainMetaTable(w, name, meta)

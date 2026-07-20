@@ -115,14 +115,34 @@ func newSetContext(opts *Options) *cobra.Command {
 				ctx.CacheDir = authCacheDir
 			}
 
-			serviceCertChanged := anyFlagChanged(cmd,
-				"servicecert-subj-c", "servicecert-subj-p", "servicecert-subj-o", "servicecert-subj-ou",
-				"servicecert-spiffe", "servicecert-spiffe-trust-domain", "servicecert-dns-domain",
-				"servicecert-concat-intermediate-cert", "servicecert-expiry-time", "servicecert-ip", "servicecert-signer-key-id")
-			roleCertChanged := anyFlagChanged(cmd,
-				"rolecert-subj-c", "rolecert-subj-p", "rolecert-subj-o", "rolecert-subj-ou",
-				"rolecert-spiffe", "rolecert-spiffe-trust-domain", "rolecert-dns-domain",
-				"rolecert-concat-intermediate-cert", "rolecert-cacert-bundle-name", "rolecert-expiry-time", "rolecert-ip", "rolecert-signer-key-id")
+			serviceCertDefaults := certificateDefaultValues{
+				subjectCountry:            serviceCertSubjC,
+				subjectProvince:           serviceCertSubjP,
+				subjectOrganization:       serviceCertSubjO,
+				subjectOrganizationalUnit: serviceCertSubjOU,
+				spiffe:                    serviceCertSpiffe,
+				spiffeTrustDomain:         serviceCertTrustDomain,
+				dnsDomain:                 serviceCertDNSDomain,
+				concatIntermediateCert:    serviceCertConcat,
+				expiryTimeMinutes:         serviceCertExpiryTime,
+				ip:                        serviceCertIP,
+				signerKeyID:               serviceCertSignerKeyID,
+			}
+			roleCertDefaults := certificateDefaultValues{
+				subjectCountry:            roleCertSubjC,
+				subjectProvince:           roleCertSubjP,
+				subjectOrganization:       roleCertSubjO,
+				subjectOrganizationalUnit: roleCertSubjOU,
+				spiffe:                    roleCertSpiffe,
+				spiffeTrustDomain:         roleCertTrustDomain,
+				dnsDomain:                 roleCertDNSDomain,
+				concatIntermediateCert:    roleCertConcat,
+				expiryTimeMinutes:         roleCertExpiryTime,
+				ip:                        roleCertIP,
+				signerKeyID:               roleCertSignerKeyID,
+			}
+			serviceCertChanged := certificateDefaultFlagsChanged(cmd, "servicecert")
+			roleCertChanged := certificateDefaultFlagsChanged(cmd, "rolecert") || cmd.Flags().Changed("rolecert-cacert-bundle-name")
 			if serviceCertChanged || roleCertChanged {
 				if ctx.IssueDefaults == nil {
 					ctx.IssueDefaults = &cfg.IssueDefaults{}
@@ -132,85 +152,16 @@ func newSetContext(opts *Options) *cobra.Command {
 				if ctx.IssueDefaults.ServiceCert == nil {
 					ctx.IssueDefaults.ServiceCert = &cfg.CertificateDefaults{}
 				}
-				defaults := ctx.IssueDefaults.ServiceCert
-				if cmd.Flags().Changed("servicecert-subj-c") {
-					defaults.SubjectCountry = serviceCertSubjC
-				}
-				if cmd.Flags().Changed("servicecert-subj-p") {
-					defaults.SubjectProvince = serviceCertSubjP
-				}
-				if cmd.Flags().Changed("servicecert-subj-o") {
-					defaults.SubjectOrganization = serviceCertSubjO
-				}
-				if cmd.Flags().Changed("servicecert-subj-ou") {
-					defaults.SubjectOrganizationalUnit = serviceCertSubjOU
-				}
-				if cmd.Flags().Changed("servicecert-spiffe") {
-					value := serviceCertSpiffe
-					defaults.Spiffe = &value
-				}
-				if cmd.Flags().Changed("servicecert-spiffe-trust-domain") {
-					defaults.SpiffeTrustDomain = serviceCertTrustDomain
-				}
-				if cmd.Flags().Changed("servicecert-dns-domain") {
-					defaults.DNSDomain = serviceCertDNSDomain
-				}
-				if cmd.Flags().Changed("servicecert-concat-intermediate-cert") {
-					value := serviceCertConcat
-					defaults.ConcatIntermediateCert = &value
-				}
-				if cmd.Flags().Changed("servicecert-expiry-time") {
-					defaults.ExpiryTimeMinutes = serviceCertExpiryTime
-				}
-				if cmd.Flags().Changed("servicecert-ip") {
-					defaults.IP = serviceCertIP
-				}
-				if cmd.Flags().Changed("servicecert-signer-key-id") {
-					defaults.SignerKeyID = serviceCertSignerKeyID
-				}
+				applyCertificateDefaultFlags(cmd, ctx.IssueDefaults.ServiceCert, "servicecert", serviceCertDefaults)
 			}
 			if roleCertChanged {
 				if ctx.IssueDefaults.RoleCert == nil {
 					ctx.IssueDefaults.RoleCert = &cfg.CertificateDefaults{}
 				}
 				defaults := ctx.IssueDefaults.RoleCert
-				if cmd.Flags().Changed("rolecert-subj-c") {
-					defaults.SubjectCountry = roleCertSubjC
-				}
-				if cmd.Flags().Changed("rolecert-subj-p") {
-					defaults.SubjectProvince = roleCertSubjP
-				}
-				if cmd.Flags().Changed("rolecert-subj-o") {
-					defaults.SubjectOrganization = roleCertSubjO
-				}
-				if cmd.Flags().Changed("rolecert-subj-ou") {
-					defaults.SubjectOrganizationalUnit = roleCertSubjOU
-				}
-				if cmd.Flags().Changed("rolecert-spiffe") {
-					value := roleCertSpiffe
-					defaults.Spiffe = &value
-				}
-				if cmd.Flags().Changed("rolecert-spiffe-trust-domain") {
-					defaults.SpiffeTrustDomain = roleCertTrustDomain
-				}
-				if cmd.Flags().Changed("rolecert-dns-domain") {
-					defaults.DNSDomain = roleCertDNSDomain
-				}
-				if cmd.Flags().Changed("rolecert-concat-intermediate-cert") {
-					value := roleCertConcat
-					defaults.ConcatIntermediateCert = &value
-				}
+				applyCertificateDefaultFlags(cmd, defaults, "rolecert", roleCertDefaults)
 				if cmd.Flags().Changed("rolecert-cacert-bundle-name") {
 					defaults.CACertBundleName = roleCertBundleName
-				}
-				if cmd.Flags().Changed("rolecert-expiry-time") {
-					defaults.ExpiryTimeMinutes = roleCertExpiryTime
-				}
-				if cmd.Flags().Changed("rolecert-ip") {
-					defaults.IP = roleCertIP
-				}
-				if cmd.Flags().Changed("rolecert-signer-key-id") {
-					defaults.SignerKeyID = roleCertSignerKeyID
 				}
 			}
 
@@ -371,4 +322,68 @@ func anyFlagChanged(cmd *cobra.Command, names ...string) bool {
 		}
 	}
 	return false
+}
+
+type certificateDefaultValues struct {
+	subjectCountry            string
+	subjectProvince           string
+	subjectOrganization       string
+	subjectOrganizationalUnit string
+	spiffe                    bool
+	spiffeTrustDomain         string
+	dnsDomain                 string
+	concatIntermediateCert    bool
+	expiryTimeMinutes         int
+	ip                        string
+	signerKeyID               string
+}
+
+func certificateDefaultFlagsChanged(cmd *cobra.Command, prefix string) bool {
+	for _, suffix := range []string{
+		"subj-c", "subj-p", "subj-o", "subj-ou", "spiffe", "spiffe-trust-domain",
+		"dns-domain", "concat-intermediate-cert", "expiry-time", "ip", "signer-key-id",
+	} {
+		if cmd.Flags().Changed(prefix + "-" + suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+func applyCertificateDefaultFlags(cmd *cobra.Command, defaults *cfg.CertificateDefaults, prefix string, values certificateDefaultValues) {
+	if cmd.Flags().Changed(prefix + "-subj-c") {
+		defaults.SubjectCountry = values.subjectCountry
+	}
+	if cmd.Flags().Changed(prefix + "-subj-p") {
+		defaults.SubjectProvince = values.subjectProvince
+	}
+	if cmd.Flags().Changed(prefix + "-subj-o") {
+		defaults.SubjectOrganization = values.subjectOrganization
+	}
+	if cmd.Flags().Changed(prefix + "-subj-ou") {
+		defaults.SubjectOrganizationalUnit = values.subjectOrganizationalUnit
+	}
+	if cmd.Flags().Changed(prefix + "-spiffe") {
+		value := values.spiffe
+		defaults.Spiffe = &value
+	}
+	if cmd.Flags().Changed(prefix + "-spiffe-trust-domain") {
+		defaults.SpiffeTrustDomain = values.spiffeTrustDomain
+	}
+	if cmd.Flags().Changed(prefix + "-dns-domain") {
+		defaults.DNSDomain = values.dnsDomain
+	}
+	if cmd.Flags().Changed(prefix + "-concat-intermediate-cert") {
+		value := values.concatIntermediateCert
+		defaults.ConcatIntermediateCert = &value
+	}
+	if cmd.Flags().Changed(prefix + "-expiry-time") {
+		defaults.ExpiryTimeMinutes = values.expiryTimeMinutes
+	}
+	if cmd.Flags().Changed(prefix + "-ip") {
+		defaults.IP = values.ip
+	}
+	if cmd.Flags().Changed(prefix + "-signer-key-id") {
+		defaults.SignerKeyID = values.signerKeyID
+	}
 }

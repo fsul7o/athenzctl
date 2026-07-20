@@ -24,7 +24,7 @@ func getPolicyVersion(w io.Writer, zc *zms.ZMSClient, domain, name string, forma
 		if err != nil {
 			return cliopts.WrapErr(err)
 		}
-		if done, err := renderStructured(w, format, p); done || err != nil {
+		if done, err := printer.WriteStructured(w, format, p); done || err != nil {
 			return err
 		}
 		return renderPolicyVersionTable(w, []*zms.Policy{p})
@@ -34,7 +34,7 @@ func getPolicyVersion(w io.Writer, zc *zms.ZMSClient, domain, name string, forma
 		return cliopts.WrapErr(err)
 	}
 	filtered := filterPolicyVersions(ps.List, ref.Policy)
-	if done, err := renderStructured(w, format, filtered); done || err != nil {
+	if done, err := printer.WriteStructured(w, format, filtered); done || err != nil {
 		return err
 	}
 	return renderPolicyVersionTable(w, filtered)

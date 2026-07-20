@@ -24,7 +24,7 @@ func getServiceKey(w io.Writer, zc *zms.ZMSClient, domain, name string, format p
 		if err != nil {
 			return cliopts.WrapErr(err)
 		}
-		if done, err := renderStructured(w, format, pk); done || err != nil {
+		if done, err := printer.WriteStructured(w, format, pk); done || err != nil {
 			return err
 		}
 		return renderServiceKeyTable(w, ref.Service, []*zms.PublicKeyEntry{pk})
@@ -33,7 +33,7 @@ func getServiceKey(w io.Writer, zc *zms.ZMSClient, domain, name string, format p
 	if err != nil {
 		return cliopts.WrapErr(err)
 	}
-	if done, err := renderStructured(w, format, s.PublicKeys); done || err != nil {
+	if done, err := printer.WriteStructured(w, format, s.PublicKeys); done || err != nil {
 		return err
 	}
 	return renderServiceKeyTable(w, ref.Service, s.PublicKeys)

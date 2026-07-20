@@ -2,6 +2,7 @@ package issue
 
 import (
 	"fmt"
+	"io"
 	"net/url"
 	"strconv"
 	"strings"
@@ -59,16 +60,7 @@ just the token string; use -o json/yaml for the full response.`,
 			if err != nil {
 				return err
 			}
-			out := cmd.OutOrStdout()
-			switch format {
-			case printer.FormatJSON:
-				return printer.WriteJSON(out, resp)
-			case printer.FormatYAML:
-				return printer.WriteYAML(out, resp)
-			default:
-				_, err := fmt.Fprintln(out, resp.Access_token)
-				return err
-			}
+			return writeAccessToken(cmd.OutOrStdout(), format, resp)
 		},
 	}
 	cmd.Flags().StringSliceVarP(&roles, "role", "r", nil, "role name(s) within the domain; may be repeated")
@@ -76,6 +68,14 @@ just the token string; use -o json/yaml for the full response.`,
 	cmd.Flags().StringVar(&proxyFor, "proxy-for-principal", "", "issue a token proxied on behalf of this principal")
 	cmd.Flags().StringVar(&authzDetail, "authorization-details", "", "RFC 9396 authorization_details JSON string")
 	return cmd
+}
+
+func writeAccessToken(w io.Writer, format printer.Format, resp *zts.AccessTokenResponse) error {
+	if handled, err := printer.WriteStructured(w, format, resp); handled || err != nil {
+		return err
+	}
+	_, err := fmt.Fprintln(w, resp.Access_token)
+	return err
 }
 
 func buildScope(domain string, roles []string) string {

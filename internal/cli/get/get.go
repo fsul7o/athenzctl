@@ -3,12 +3,10 @@ package get
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/spf13/cobra"
 
 	"github.com/fsul7o/athenzctl/internal/cliopts"
-	"github.com/fsul7o/athenzctl/internal/printer"
 	"github.com/fsul7o/athenzctl/internal/resource"
 )
 
@@ -62,85 +60,41 @@ membership(s), template(s), domain-template(s), quota.`,
 			if err != nil {
 				return err
 			}
+			domain, err := opts.ResolveResourceDomain(kind, name)
+			if err != nil {
+				return err
+			}
 			out := cmd.OutOrStdout()
 
 			switch kind {
 			case resource.KindDomain:
 				return getDomain(out, zc, name, format)
 			case resource.KindDomainMeta:
-				dom, err := opts.ResolveDomain(name)
-				if err != nil {
-					return err
-				}
-				return getDomainMeta(out, zc, dom, format)
+				return getDomainMeta(out, zc, domain, format)
 			case resource.KindRole:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return getRole(out, zc, dom, name, format)
+				return getRole(out, zc, domain, name, format)
 			case resource.KindRoleMeta:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return getRoleMeta(out, zc, dom, name, format)
+				return getRoleMeta(out, zc, domain, name, format)
 			case resource.KindPolicy:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return getPolicy(out, zc, dom, name, format)
+				return getPolicy(out, zc, domain, name, format)
 			case resource.KindPolicyVersion:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return getPolicyVersion(out, zc, dom, name, format)
+				return getPolicyVersion(out, zc, domain, name, format)
 			case resource.KindService:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return getService(out, zc, dom, name, format)
+				return getService(out, zc, domain, name, format)
 			case resource.KindServiceKey:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return getServiceKey(out, zc, dom, name, format)
+				return getServiceKey(out, zc, domain, name, format)
 			case resource.KindTemplate:
 				return getTemplate(out, zc, name, format)
 			case resource.KindDomainTemplate:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return getDomainTemplate(out, zc, dom, format)
+				return getDomainTemplate(out, zc, domain, format)
 			case resource.KindQuota:
-				dom, err := opts.ResolveDomain(name)
-				if err != nil {
-					return err
-				}
-				return getQuota(out, zc, dom, format)
+				return getQuota(out, zc, domain, format)
 			case resource.KindGroup:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return getGroup(out, zc, dom, name, format)
+				return getGroup(out, zc, domain, name, format)
 			case resource.KindGroupMeta:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return getGroupMeta(out, zc, dom, name, format)
+				return getGroupMeta(out, zc, domain, name, format)
 			case resource.KindMembership:
-				dom, err := opts.RequireDomain()
-				if err != nil {
-					return err
-				}
-				return getMembership(cmd, out, zc, dom, name, format)
+				return getMembership(cmd, out, zc, domain, name, format)
 			default:
 				return fmt.Errorf("`get %s` is not supported", kind)
 			}
@@ -152,17 +106,4 @@ membership(s), template(s), domain-template(s), quota.`,
 	cmd.Flags().String("principal", "", "filter pending membership by approving principal (only with --pending)")
 	cliopts.SetKindAwareHelp(cmd, kindFlags)
 	return cmd
-}
-
-// renderStructured picks JSON or YAML for -o flags that request them. Returns
-// (rendered, err): rendered=true means the caller should not fall through to
-// a tabular renderer.
-func renderStructured(w io.Writer, format printer.Format, v any) (bool, error) {
-	switch format {
-	case printer.FormatJSON:
-		return true, printer.WriteJSON(w, v)
-	case printer.FormatYAML:
-		return true, printer.WriteYAML(w, v)
-	}
-	return false, nil
 }

@@ -15,7 +15,7 @@ func getGroup(w io.Writer, zc *zms.ZMSClient, domain, name string, format printe
 		if err != nil {
 			return cliopts.WrapErr(err)
 		}
-		if done, err := renderStructured(w, format, g); done || err != nil {
+		if done, err := printer.WriteStructured(w, format, g); done || err != nil {
 			return err
 		}
 		return renderGroupTable(w, []*zms.Group{g})
@@ -24,7 +24,7 @@ func getGroup(w io.Writer, zc *zms.ZMSClient, domain, name string, format printe
 	if err != nil {
 		return cliopts.WrapErr(err)
 	}
-	if done, err := renderStructured(w, format, gs); done || err != nil {
+	if done, err := printer.WriteStructured(w, format, gs); done || err != nil {
 		return err
 	}
 	return renderGroupTable(w, gs.List)
