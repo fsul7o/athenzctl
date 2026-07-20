@@ -30,19 +30,61 @@ type Config struct {
 // server certificate — e.g. dialing https://localhost:4443 against a cert
 // whose SAN is athenz-zms-server. Leave empty in normal deployments.
 type Context struct {
-	Name                  string         `yaml:"name"`
-	ZMSURL                string         `yaml:"zms-url,omitempty"`
-	ZTSURL                string         `yaml:"zts-url,omitempty"`
-	Cert                  string         `yaml:"cert,omitempty"`            // path to PEM
-	Key                   string         `yaml:"key,omitempty"`             // path to PEM
-	CACert                string         `yaml:"ca-cert,omitempty"`         // optional
-	ZMSServerName         string         `yaml:"zms-server-name,omitempty"` // optional TLS ServerName override
-	ZTSServerName         string         `yaml:"zts-server-name,omitempty"` // optional TLS ServerName override
-	InsecureSkipTLSVerify bool           `yaml:"insecure-skip-tls-verify,omitempty"`
-	ProxyURL              string         `yaml:"proxy,omitempty"`
-	AuthMode              string         `yaml:"auth-mode,omitempty"` // "" or "mtls" (default), "exec"
-	Exec                  *ExecConfig    `yaml:"exec,omitempty"`
-	IssueDefaults         *IssueDefaults `yaml:"issue-defaults,omitempty"`
+	Name                  string                 `yaml:"name"`
+	ZMSURL                string                 `yaml:"zms-url,omitempty"`
+	ZTSURL                string                 `yaml:"zts-url,omitempty"`
+	Cert                  string                 `yaml:"cert,omitempty"`            // path to PEM
+	Key                   string                 `yaml:"key,omitempty"`             // path to PEM
+	CACert                string                 `yaml:"ca-cert,omitempty"`         // optional
+	ZMSServerName         string                 `yaml:"zms-server-name,omitempty"` // optional TLS ServerName override
+	ZTSServerName         string                 `yaml:"zts-server-name,omitempty"` // optional TLS ServerName override
+	InsecureSkipTLSVerify bool                   `yaml:"insecure-skip-tls-verify,omitempty"`
+	ProxyURL              string                 `yaml:"proxy,omitempty"`
+	AuthMode              string                 `yaml:"auth-mode,omitempty"` // "" or "mtls" (default), "exec", "ntoken", "copperargos"
+	Exec                  *ExecConfig            `yaml:"exec,omitempty"`
+	NTokenAuth            *NTokenAuthConfig      `yaml:"ntoken-auth,omitempty"`
+	CopperArgosAuth       *CopperArgosAuthConfig `yaml:"copperargos-auth,omitempty"`
+	// CacheDir is the on-disk cache directory used by auth-mode "ntoken"/
+	// "copperargos" for the minted/issued cert+key (default, if empty:
+	// ~/.athenzctl/cache/<context-name>/<mode>). Shared by both auth-modes
+	// since a context only ever uses one auth-mode at a time.
+	CacheDir      string         `yaml:"auth-cache-dir,omitempty"`
+	IssueDefaults *IssueDefaults `yaml:"issue-defaults,omitempty"`
+}
+
+// NTokenAuthConfig configures auth-mode "ntoken": on every invocation, sign a
+// ZMS service token (NToken) with PrivateKeyPath/KeyID (a key pair already
+// registered in ZMS) and use it to authenticate a ZTS
+// PostInstanceRefreshRequest call, obtaining a fresh short-lived X.509
+// service certificate that is then used for that invocation's ZMS/ZTS mTLS
+// calls. The resulting cert/key are cached under Context.CacheDir and
+// reused until they are near expiry.
+type NTokenAuthConfig struct {
+	Domain         string `yaml:"domain"`
+	Service        string `yaml:"service"`
+	PrivateKeyPath string `yaml:"private-key"`   // path to the ZMS-registered private key PEM
+	KeyID          string `yaml:"key-id"`        // ZMS public key version
+	Header         string `yaml:"hdr,omitempty"` // HTTP header the NToken is sent under (default: "Athenz-Principal-Auth", mirrors zts-svccert -hdr)
+}
+
+// CopperArgosAuthConfig configures auth-mode "copperargos": on every
+// invocation, use a previously prepared attestation-data file (e.g. produced
+// out-of-band by `issue instance-register-token --out`) to register a
+// service X.509 certificate via ZTS's Copper Argos provider flow
+// (PostInstanceRegisterInformation). Once a certificate has been issued, it
+// is cached under Context.CacheDir and refreshed (PostInstanceRefreshRequest,
+// using the cached certificate itself as the mTLS credential) rather than
+// re-registered, since providers generally allow registering a given
+// instance only once. The CSR key for registration is always a fresh
+// ephemeral key generated in memory (never user-configurable), since
+// registration only ever runs when there's no existing cert/key worth
+// preserving.
+type CopperArgosAuthConfig struct {
+	Domain              string `yaml:"domain"`
+	Service             string `yaml:"service"`
+	Provider            string `yaml:"provider"`
+	Instance            string `yaml:"instance"`
+	AttestationDataPath string `yaml:"attestation-data-path"`
 }
 
 // IssueDefaults contains optional defaults for the credential-issuing

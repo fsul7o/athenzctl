@@ -1,15 +1,10 @@
 package issue
 
 import (
-	"bytes"
-	"crypto/rand"
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"net"
-	"net/url"
 	"os"
 	"strings"
 
@@ -18,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/fsul7o/athenzctl/internal/cliopts"
+	"github.com/fsul7o/athenzctl/internal/csr"
 )
 
 // newRoleCert requests a role X.509 certificate. Flags mirror `zts-rolecert`
@@ -57,7 +53,7 @@ The CSR is generated in-process from --role-key-file (defaulting to the
 context's service key). Pass --csr to print the CSR and exit without
 calling ZTS.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			defaults, err := resolveCertificateDefaults(cmd, opts, roleCertKind)
+			defaults, err := resolveCertificateDefaults(cmd, opts)
 			if err != nil {
 				return err
 			}
@@ -113,7 +109,7 @@ calling ZTS.`,
 			if err != nil {
 				return fmt.Errorf("read role key %s: %w", keyPath, err)
 			}
-			signer, err := newCSRSigner(keyBytes)
+			signer, err := csr.NewSigner(keyBytes)
 			if err != nil {
 				return fmt.Errorf("load role key: %w", err)
 			}
@@ -129,8 +125,8 @@ calling ZTS.`,
 					spiffeURI = fmt.Sprintf("spiffe://%s/ra/%s", roleDomain, roleName)
 				}
 			}
-			subj := newCSRSubject(fmt.Sprintf("%s:role.%s", roleDomain, roleName), subjC, subjP, subjO, subjOU)
-			csrPEM, err := generateRoleCSR(signer, subj, host, principal, dnsDomain, ip, spiffeURI)
+			subj := csr.NewSubject(fmt.Sprintf("%s:role.%s", roleDomain, roleName), subjC, subjP, subjO, subjOU)
+			csrPEM, err := csr.GenerateRoleCSR(signer, subj, host, principal, dnsDomain, ip, spiffeURI)
 			if err != nil {
 				return err
 			}
@@ -186,7 +182,7 @@ calling ZTS.`,
 	// overrides so `--help` reflects the same defaults resolveCertificateDefaults
 	// applies at run time. Errors here (a malformed built-in override) surface
 	// again, properly, when the command actually runs.
-	flagDefaults, _ := buildCertificateDefaults(roleCertKind)
+	flagDefaults, _ := buildCertificateDefaults()
 	cmd.Flags().StringVar(&roleDomain, "role-domain", "", "role domain (required)")
 	cmd.Flags().StringVar(&roleName, "role-name", "", "role name in --role-domain (required)")
 	cmd.Flags().StringVar(&service, "service", "", "caller service name (default: extracted from context cert CN)")
@@ -216,37 +212,6 @@ func writePEM(cmd *cobra.Command, outPath, pem string) error {
 		return err
 	}
 	return os.WriteFile(outPath, []byte(pem), 0o644)
-}
-
-func generateRoleCSR(signer *csrSigner, subj pkix.Name, host, principal, dnsDomain, ip, spiffeURI string) (string, error) {
-	tmpl := x509.CertificateRequest{
-		Subject:            subj,
-		SignatureAlgorithm: signer.algorithm,
-	}
-	if host != "" {
-		tmpl.DNSNames = []string{host}
-	}
-	if ip != "" {
-		tmpl.IPAddresses = []net.IP{net.ParseIP(ip)}
-	}
-	tmpl.EmailAddresses = []string{fmt.Sprintf("%s@%s", principal, dnsDomain)}
-	if spiffeURI != "" {
-		if u, err := url.Parse(spiffeURI); err == nil {
-			tmpl.URIs = append(tmpl.URIs, u)
-		}
-	}
-	if u, err := url.Parse(fmt.Sprintf("athenz://principal/%s", principal)); err == nil {
-		tmpl.URIs = append(tmpl.URIs, u)
-	}
-	der, err := x509.CreateCertificateRequest(rand.Reader, &tmpl, signer.key)
-	if err != nil {
-		return "", fmt.Errorf("create CSR: %w", err)
-	}
-	var buf bytes.Buffer
-	if err := pem.Encode(&buf, &pem.Block{Type: "CERTIFICATE REQUEST", Bytes: der}); err != nil {
-		return "", fmt.Errorf("encode CSR: %w", err)
-	}
-	return buf.String(), nil
 }
 
 func certFromFile(path string) (*x509.Certificate, error) {

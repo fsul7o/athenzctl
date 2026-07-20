@@ -1,0 +1,16 @@
+--- a/kubernetes/athenz-zts-server/kustomize/conf/zts.properties
++++ b/kubernetes/athenz-zts-server/kustomize/conf/zts.properties
+@@ -9,7 +9,12 @@
+ 
+ # Comma separated list of authority implementation classes to support
+ # authenticating principals in ZTS
+-athenz.zts.authority_classes=com.yahoo.athenz.auth.impl.CertificateAuthority,com.yahoo.athenz.auth.impl.AuthorizedServiceAuthHeaderAuthority,com.yahoo.athenz.auth.impl.OIDCJwtAuthority
++#
++# athenzctl's e2e suite exercises the ntoken auth-mode, which authenticates
++# ZTS's PostInstanceRefreshRequest with a signed NToken (PrincipalToken), so
++# PrincipalAuthority must be enabled here for that scenario to succeed
++# instead of returning a 401 Invalid credentials.
++athenz.zts.authority_classes=com.yahoo.athenz.auth.impl.CertificateAuthority,com.yahoo.athenz.auth.impl.AuthorizedServiceAuthHeaderAuthority,com.yahoo.athenz.auth.impl.OIDCJwtAuthority,com.yahoo.athenz.auth.impl.PrincipalAuthority
+ athenz.auth.principal.auth.header.user=X-Auth-Request-Preferred-Username
+ 
+ # User Certificate

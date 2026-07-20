@@ -8,11 +8,15 @@ package e2e
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -225,6 +229,10 @@ func (w *world) aDomainSystemAttributeExists(attribute, value, domain string) er
 		meta.ProductId = value
 	case "businessservice":
 		meta.BusinessService = value
+	case "certdnsdomain":
+		// The DNS suffix instance providers (e.g. sys.auth.zts) require CSR
+		// SAN hostnames to end with, when minting/refreshing service certs.
+		meta.CertDnsDomain = value
 	default:
 		return fmt.Errorf("unsupported domain system attribute %q", attribute)
 	}
@@ -257,6 +265,47 @@ func (w *world) aServiceExists(svc, domain string) error {
 	}
 	if w.lastErr != nil {
 		return fmt.Errorf("create service %s: %v: %s", svc, w.lastErr, w.stderr.String())
+	}
+	return nil
+}
+
+// aRegisteredServiceKeyPair generates a fresh RSA key pair, registers the
+// public half as servicekey "svc:keyID" in domain, and writes the private
+// half to a file under the scenario's temp dir exposed as $SVC_KEY_PATH —
+// mirroring how a real operator registers a key pair for the ntoken
+// auth-mode's "Registered Public/Private Key Pair" flow before athenzctl is
+// ever invoked.
+func (w *world) aRegisteredServiceKeyPair(svc, keyID, domain string) error {
+	domain = w.expand(domain)
+	if err := w.aServiceExists(svc, domain); err != nil {
+		return err
+	}
+
+	privKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return fmt.Errorf("generate rsa key: %w", err)
+	}
+	privPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privKey),
+	})
+	pubBytes, err := x509.MarshalPKIXPublicKey(&privKey.PublicKey)
+	if err != nil {
+		return fmt.Errorf("marshal rsa public key: %w", err)
+	}
+	pubPEM := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: pubBytes})
+
+	keyPath := filepath.Join(w.tempDir, svc+".key.pem")
+	if err := os.WriteFile(keyPath, privPEM, 0o600); err != nil {
+		return fmt.Errorf("write private key %q: %w", keyPath, err)
+	}
+	w.vars["SVC_KEY_PATH"] = keyPath
+
+	if err := w.run([]string{"create", "servicekey", svc + ":" + keyID, "-d", domain, "--key", string(pubPEM)}); err != nil {
+		return err
+	}
+	if w.lastErr != nil {
+		return fmt.Errorf("create servicekey %s:%s: %v: %s", svc, keyID, w.lastErr, w.stderr.String())
 	}
 	return nil
 }
@@ -411,6 +460,10 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 				w.vars["ADMIN_KEY"] = cc.Key
 				w.vars["ADMIN_CERT"] = cc.Cert
 				w.vars["ADMIN_CA"] = cc.CACert
+				w.vars["ZMS_URL"] = cc.ZMSURL
+				w.vars["ZTS_URL"] = cc.ZTSURL
+				w.vars["ZMS_SNI"] = cc.ZMSServerName
+				w.vars["ZTS_SNI"] = cc.ZTSServerName
 			}
 		}
 		w.vars["TEMP_DIR"] = dir
@@ -475,6 +528,9 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	})
 	ctx.Step(`^a role "([^"]+)" exists in domain "([^"]+)"$`, func(r, d string) error { return w.aRoleExists(r, d) })
 	ctx.Step(`^a service "([^"]+)" exists in domain "([^"]+)"$`, func(s, d string) error { return w.aServiceExists(s, d) })
+	ctx.Step(`^a registered service key pair "([^"]+)" for service "([^"]+)" exists in domain "([^"]+)"$`, func(keyID, s, d string) error {
+		return w.aRegisteredServiceKeyPair(s, keyID, d)
+	})
 	ctx.Step(`^a policy "([^"]+)" exists in domain "([^"]+)"$`, func(p, d string) error { return w.aPolicyExists(p, d) })
 	ctx.Step(`^a group "([^"]+)" exists in domain "([^"]+)"$`, func(g, d string) error { return w.aGroupExists(g, d) })
 	// ZTS pulls domain updates from ZMS on an interval (see athenz.zts.zms_domain_update_timeout).
@@ -483,7 +539,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^"([^"]+)" prerequisites exist$`, func(kind string) error { return w.prerequisitesFor(kind) })
 
 	// Per-scenario context override.
-	ctx.Step(`^I use the "([^"]+)" context$`, func(name string) error { w.ctxName = name; return nil })
+	ctx.Step(`^I use the "([^"]+)" context$`, func(name string) error { w.ctxName = w.expand(name); return nil })
 
 	// When.
 	ctx.Step(`^I run athenzctl "([^"]*)"$`, func(line string) error { return w.runLine(line) })

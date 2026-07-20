@@ -47,16 +47,6 @@ Feature: athenzctl issue (ZTS credentials)
     Then the command should succeed
     And stdout should contain "CERTIFICATE REQUEST"
 
-  Scenario: issue servicecert (CSR only)
-    When I run athenzctl "issue servicecert -d sys.auth --service e2e-svc --dns-domain athenz.cloud --private-key $ADMIN_KEY --csr --concat-intermediate-cert"
-    Then the command should succeed
-    And stdout should contain "CERTIFICATE REQUEST"
-
-  Scenario: generate a service certificate CSR with every CSR option
-    When I run athenzctl "issue servicecert -d sys.auth --service e2e-svc --provider sys.auth.zts --instance i-1 --private-key $ADMIN_KEY --dns-domain athenz.cloud --subj-c JP --subj-p Tokyo --subj-o Example --subj-ou E2E --spiffe=false --spiffe-trust-domain example.test --ip 127.0.0.1 --attestation-data $TEMP_DIR/attestation.data --signer-key-id 0 --expiry-time 5 --out $TEMP_DIR/service.cert.pem --signer-cert-out $TEMP_DIR/signer.cert.pem --csr --use-instance-register-token"
-    Then the command should succeed
-    And stdout should contain "CERTIFICATE REQUEST"
-
   Scenario: issue instance-register-token
     # sys.auth.zts is the built-in InstanceZTSProvider. The tenant service is
     # created in the fresh test domain and authorized to launch by ZTS.

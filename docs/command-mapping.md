@@ -1,6 +1,6 @@
 # Athenz official tools ↔ athenzctl option mapping
 
-This document maps the options and subcommands of the official Athenz command-line tools that athenzctl replaces (`zms-cli`, `zts-accesstoken`, `zts-svccert`, `zts-rolecert`, `zpu`/`zpe-updater`) to their corresponding athenzctl commands and flags.
+This document maps the options and subcommands of the official Athenz command-line tools that athenzctl replaces (`zms-cli`, `zts-accesstoken`, `zts-rolecert`, `zpu`/`zpe-updater`) to their corresponding athenzctl commands and flags. `zts-svccert` is only partially replaced — see the dedicated section below.
 
 Reference version: `github.com/AthenZ/athenz@v1.12.43` (source read from the local `go pkg mod` cache). The athenzctl side was read directly from this repository's `internal/cli/**`.
 
@@ -11,7 +11,7 @@ Reference version: `github.com/AthenZ/athenz@v1.12.43` (source read from the loc
 3. [zms-cli global flag mapping](#zms-cli-global-flag-mapping)
 4. [zms-cli ↔ athenzctl (by resource)](#zms-cli--athenzctl-by-resource)
 5. [zts-accesstoken ↔ `athenzctl issue accesstoken`](#zts-accesstoken--athenzctl-issue-accesstoken)
-6. [zts-svccert ↔ `athenzctl issue servicecert` / `issue instance-register-token`](#zts-svccert--athenzctl-issue-servicecert--issue-instance-register-token)
+6. [zts-svccert ↔ `athenzctl issue instance-register-token`](#zts-svccert--athenzctl-issue-instance-register-token)
 7. [zts-rolecert ↔ `athenzctl issue rolecert`](#zts-rolecert--athenzctl-issue-rolecert)
 8. [zpu (zpe-updater) ↔ `athenzctl fetch signedpolicy`](#zpu-zpe-updater--athenzctl-fetch-signedpolicy)
 9. [Summary of unsupported / out-of-scope features](#summary-of-unsupported--out-of-scope-features)
@@ -263,32 +263,34 @@ command in athenzctl.
 | `-actor` | `--proxy-for-principal` (conceptually close) | Not an exact 1:1 mapping |
 | `-version` | `athenzctl version` | |
 
-## zts-svccert ↔ `athenzctl issue servicecert` / `issue instance-register-token`
+## zts-svccert ↔ `athenzctl issue instance-register-token`
+
+athenzctl does **not** implement a `issue servicecert` command — service X.509
+identity certificate issuance/refresh is considered out of scope for
+one-off/manual CLI use; use the official `zts-svccert` tool directly for
+that. The only piece of the `zts-svccert` surface athenzctl still implements
+as a standalone command is fetching a bootstrap attestation token:
 
 | zts-svccert flag | athenzctl equivalent | Notes |
 |---|---|---|
-| `-csr` | `--csr` | |
-| `-get-instance-register-token` | `issue instance-register-token` (a separate subcommand) | |
-| `-use-instance-register-token` | `--use-instance-register-token` | |
-| `-spiffe` / `-spiffe-trust-domain` | `--spiffe` / `--spiffe-trust-domain` | |
-| `-expiry-time` | `--expiry-time` | Also configurable via build-time `ISSUE_DEFAULT_SERVICECERT_EXPIRY_TIME` or context `issue-defaults.servicecert.expiry-time` |
-| `-cert-file` | `--out` | |
-| `-signer-cert-file` | `--signer-cert-out` | |
-| `-cacert` | `config set-context --ca-cert` | |
-| `-private-key` | `--private-key` | |
+| `-get-instance-register-token` | `issue instance-register-token` | |
+| `-zts` | `config set-context --zts-url` | |
 | `-domain` | `-d`/`--domain` (global) | |
 | `-service` | `--service` | |
-| `-dns-domain` | `--dns-domain` | |
-| `-subj-c` / `-subj-o` / `-subj-ou` | `--subj-c` / `--subj-p` / `--subj-o` / `--subj-ou` | `--subj-p` is athenzctl extension |
-| (none) | Build-time `ISSUE_DEFAULT_SERVICECERT_*` or context `issue-defaults.servicecert` | CLI flags override context and build-time defaults |
-| `-ip` | `--ip` | Also configurable via build-time `ISSUE_DEFAULT_SERVICECERT_IP` or context `issue-defaults.servicecert.ip` |
-| `-provider` / `-instance` | `--provider` / `--instance` | Used by both `issue servicecert` (`--instance-id` is a deprecated alias) and `issue instance-register-token` |
-| `-attestation-data` | `--attestation-data` | |
-| `-svc-key-file` / `-svc-cert-file` / `-ntoken-file` / `-key-version` / `-hdr` | `config set-context --key/--cert` (NToken-related flags are **out of scope**) | Auth for fetching the instance register token is also centralized in the context |
-| `-signer-key-id` | `--signer-key-id` | Also configurable via build-time `ISSUE_DEFAULT_SERVICECERT_SIGNER_KEY_ID` or context `issue-defaults.servicecert.signer-key-id` |
-| (none) | `--concat-intermediate-cert` | athenzctl appends the CA bundle returned with the service certificate to the output certificate. Also configurable via build-time `ISSUE_DEFAULT_SERVICECERT_CONCAT_INTERMEDIATE_CERT` or context `issue-defaults.servicecert.concat-intermediate-cert` |
-| `-service-cert` | No equivalent | |
+| `-provider` | `--provider` | |
+| `-instance` (last path segment of the request) | `--instance` | |
+| `attestation-data <token-output-file>` | `--out` | |
+| `-svc-key-file` / `-svc-cert-file` / `-ntoken-file` / `-hdr` | `config set-context --key/--cert` (NToken-based auth remains **out of scope**) | Auth for fetching the token is centralized in the context |
+| `-cacert` | `config set-context --ca-cert` | |
 | `-version` | `athenzctl version` | |
+
+For automatically minting a service certificate on every athenzctl
+invocation instead of issuing one manually, see `config set-context
+--auth-mode ntoken` (a ZMS-registered key pair, NToken-authenticated) or
+`--auth-mode copperargos` (a prepared attestation-data file, Copper Argos
+provider registration) in the README's "Auth modes" section — these use the
+same ZTS APIs as `zts-svccert` internally but are configured once per
+context rather than invoked per certificate.
 
 ## zts-rolecert ↔ `athenzctl issue rolecert`
 
