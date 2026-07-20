@@ -34,6 +34,10 @@ func newSetContext(opts *Options) *cobra.Command {
 		serviceCertSpiffe      bool
 		serviceCertTrustDomain string
 		serviceCertDNSDomain   string
+		serviceCertConcat      bool
+		serviceCertExpiryTime  int
+		serviceCertIP          string
+		serviceCertSignerKeyID string
 		roleCertSubjC          string
 		roleCertSubjP          string
 		roleCertSubjO          string
@@ -41,6 +45,11 @@ func newSetContext(opts *Options) *cobra.Command {
 		roleCertSpiffe         bool
 		roleCertTrustDomain    string
 		roleCertDNSDomain      string
+		roleCertConcat         bool
+		roleCertBundleName     string
+		roleCertExpiryTime     int
+		roleCertIP             string
+		roleCertSignerKeyID    string
 	)
 	cmd := &cobra.Command{
 		Use:   "set-context NAME",
@@ -91,10 +100,12 @@ func newSetContext(opts *Options) *cobra.Command {
 
 			serviceCertChanged := anyFlagChanged(cmd,
 				"servicecert-subj-c", "servicecert-subj-p", "servicecert-subj-o", "servicecert-subj-ou",
-				"servicecert-spiffe", "servicecert-spiffe-trust-domain", "servicecert-dns-domain")
+				"servicecert-spiffe", "servicecert-spiffe-trust-domain", "servicecert-dns-domain",
+				"servicecert-concat-intermediate-cert", "servicecert-expiry-time", "servicecert-ip", "servicecert-signer-key-id")
 			roleCertChanged := anyFlagChanged(cmd,
 				"rolecert-subj-c", "rolecert-subj-p", "rolecert-subj-o", "rolecert-subj-ou",
-				"rolecert-spiffe", "rolecert-spiffe-trust-domain", "rolecert-dns-domain")
+				"rolecert-spiffe", "rolecert-spiffe-trust-domain", "rolecert-dns-domain",
+				"rolecert-concat-intermediate-cert", "rolecert-cacert-bundle-name", "rolecert-expiry-time", "rolecert-ip", "rolecert-signer-key-id")
 			if serviceCertChanged || roleCertChanged {
 				if ctx.IssueDefaults == nil {
 					ctx.IssueDefaults = &cfg.IssueDefaults{}
@@ -127,6 +138,19 @@ func newSetContext(opts *Options) *cobra.Command {
 				if cmd.Flags().Changed("servicecert-dns-domain") {
 					defaults.DNSDomain = serviceCertDNSDomain
 				}
+				if cmd.Flags().Changed("servicecert-concat-intermediate-cert") {
+					value := serviceCertConcat
+					defaults.ConcatIntermediateCert = &value
+				}
+				if cmd.Flags().Changed("servicecert-expiry-time") {
+					defaults.ExpiryTimeMinutes = serviceCertExpiryTime
+				}
+				if cmd.Flags().Changed("servicecert-ip") {
+					defaults.IP = serviceCertIP
+				}
+				if cmd.Flags().Changed("servicecert-signer-key-id") {
+					defaults.SignerKeyID = serviceCertSignerKeyID
+				}
 			}
 			if roleCertChanged {
 				if ctx.IssueDefaults.RoleCert == nil {
@@ -154,6 +178,22 @@ func newSetContext(opts *Options) *cobra.Command {
 				}
 				if cmd.Flags().Changed("rolecert-dns-domain") {
 					defaults.DNSDomain = roleCertDNSDomain
+				}
+				if cmd.Flags().Changed("rolecert-concat-intermediate-cert") {
+					value := roleCertConcat
+					defaults.ConcatIntermediateCert = &value
+				}
+				if cmd.Flags().Changed("rolecert-cacert-bundle-name") {
+					defaults.CACertBundleName = roleCertBundleName
+				}
+				if cmd.Flags().Changed("rolecert-expiry-time") {
+					defaults.ExpiryTimeMinutes = roleCertExpiryTime
+				}
+				if cmd.Flags().Changed("rolecert-ip") {
+					defaults.IP = roleCertIP
+				}
+				if cmd.Flags().Changed("rolecert-signer-key-id") {
+					defaults.SignerKeyID = roleCertSignerKeyID
 				}
 			}
 
@@ -229,6 +269,10 @@ func newSetContext(opts *Options) *cobra.Command {
 	cmd.Flags().BoolVar(&serviceCertSpiffe, "servicecert-spiffe", true, "servicecert default: include SPIFFE URI in CSR SAN")
 	cmd.Flags().StringVar(&serviceCertTrustDomain, "servicecert-spiffe-trust-domain", "", "servicecert default SPIFFE trust domain")
 	cmd.Flags().StringVar(&serviceCertDNSDomain, "servicecert-dns-domain", "", "servicecert default DNS domain suffix")
+	cmd.Flags().BoolVar(&serviceCertConcat, "servicecert-concat-intermediate-cert", false, "servicecert default: append the returned intermediate CA bundle to the certificate")
+	cmd.Flags().IntVar(&serviceCertExpiryTime, "servicecert-expiry-time", 0, "servicecert default requested certificate lifetime in minutes (0 = server default)")
+	cmd.Flags().StringVar(&serviceCertIP, "servicecert-ip", "", "servicecert default IP address to include in CSR SAN")
+	cmd.Flags().StringVar(&serviceCertSignerKeyID, "servicecert-signer-key-id", "", "servicecert default ZTS certificate signer key id")
 	cmd.Flags().StringVar(&roleCertSubjC, "rolecert-subj-c", "", "rolecert default CSR Subject Country")
 	cmd.Flags().StringVar(&roleCertSubjP, "rolecert-subj-p", "", "rolecert default CSR Subject Province")
 	cmd.Flags().StringVar(&roleCertSubjO, "rolecert-subj-o", "", "rolecert default CSR Subject Organization")
@@ -236,6 +280,11 @@ func newSetContext(opts *Options) *cobra.Command {
 	cmd.Flags().BoolVar(&roleCertSpiffe, "rolecert-spiffe", true, "rolecert default: include SPIFFE URI in CSR SAN")
 	cmd.Flags().StringVar(&roleCertTrustDomain, "rolecert-spiffe-trust-domain", "", "rolecert default SPIFFE trust domain")
 	cmd.Flags().StringVar(&roleCertDNSDomain, "rolecert-dns-domain", "", "rolecert default DNS domain suffix")
+	cmd.Flags().BoolVar(&roleCertConcat, "rolecert-concat-intermediate-cert", false, "rolecert default: append a CA bundle when the response does not include a certificate chain")
+	cmd.Flags().StringVar(&roleCertBundleName, "rolecert-cacert-bundle-name", "", "rolecert default CA certificate bundle name used with --concat-intermediate-cert")
+	cmd.Flags().IntVar(&roleCertExpiryTime, "rolecert-expiry-time", 0, "rolecert default requested certificate lifetime in minutes (0 = server default)")
+	cmd.Flags().StringVar(&roleCertIP, "rolecert-ip", "", "rolecert default IP address to include in CSR SAN")
+	cmd.Flags().StringVar(&roleCertSignerKeyID, "rolecert-signer-key-id", "", "rolecert default ZTS certificate signer key id")
 	return cmd
 }
 

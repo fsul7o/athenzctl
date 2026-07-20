@@ -54,8 +54,12 @@ type IssueDefaults struct {
 }
 
 // CertificateDefaults contains optional CSR defaults for one certificate
-// issuing command. Spiffe is a pointer so an explicit false is distinguishable
-// from an omitted value.
+// issuing command. Spiffe and ConcatIntermediateCert are pointers so an
+// explicit false is distinguishable from an omitted value.
+//
+// CACertBundleName is only meaningful for rolecert (used with
+// ConcatIntermediateCert to fetch a CA bundle by name); servicecert ignores
+// it because its refresh response already includes the CA bundle.
 type CertificateDefaults struct {
 	DNSDomain                 string `yaml:"dns-domain,omitempty"`
 	SubjectCountry            string `yaml:"subj-c,omitempty"`
@@ -64,6 +68,11 @@ type CertificateDefaults struct {
 	SubjectOrganizationalUnit string `yaml:"subj-ou,omitempty"`
 	SpiffeTrustDomain         string `yaml:"spiffe-trust-domain,omitempty"`
 	Spiffe                    *bool  `yaml:"spiffe,omitempty"`
+	ConcatIntermediateCert    *bool  `yaml:"concat-intermediate-cert,omitempty"`
+	CACertBundleName          string `yaml:"cacert-bundle-name,omitempty"`
+	ExpiryTimeMinutes         int    `yaml:"expiry-time,omitempty"`
+	IP                        string `yaml:"ip,omitempty"`
+	SignerKeyID               string `yaml:"signer-key-id,omitempty"`
 }
 
 // ExecConfig names an external command that places a fresh Athenz user

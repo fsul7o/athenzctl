@@ -42,6 +42,7 @@ func newRoleCert(opts *cliopts.Options) *cobra.Command {
 		proxyForPrincipal           string
 		concatIntermediateCert      bool
 		caCertBundleName            string
+		signerKeyID                 string
 	)
 	cmd := &cobra.Command{
 		Use:   "rolecert",
@@ -67,6 +68,11 @@ calling ZTS.`,
 			subjOU = defaults.subjectOrganizationalUnit
 			spiffe = defaults.spiffe
 			spiffeTrustDomain = defaults.spiffeTrustDomain
+			concatIntermediateCert = defaults.concatIntermediateCert
+			caCertBundleName = defaults.caCertBundleName
+			expiryTime = defaults.expiryTimeMinutes
+			ip = defaults.ip
+			signerKeyID = defaults.signerKeyID
 
 			if roleDomain == "" {
 				return errors.New("issue rolecert requires --role-domain")
@@ -138,6 +144,9 @@ calling ZTS.`,
 				ExpiryTime:        int64(expiryTime),
 				ProxyForPrincipal: zts.EntityName(proxyForPrincipal),
 			}
+			if signerKeyID != "" {
+				req.X509CertSignerKeyId = zts.SimpleName(signerKeyID)
+			}
 			if oldRoleCertPath != "" {
 				prev, err := certFromFile(oldRoleCertPath)
 				if err != nil {
@@ -189,14 +198,15 @@ calling ZTS.`,
 	cmd.Flags().StringVar(&subjOU, "subj-ou", flagDefaults.subjectOrganizationalUnit, "CSR Subject OrganizationalUnit")
 	cmd.Flags().BoolVar(&spiffe, "spiffe", flagDefaults.spiffe, "include SPIFFE URI in CSR SAN")
 	cmd.Flags().StringVar(&spiffeTrustDomain, "spiffe-trust-domain", flagDefaults.spiffeTrustDomain, "SPIFFE trust domain")
-	cmd.Flags().StringVar(&ip, "ip", "", "IP address to include in CSR SAN")
+	cmd.Flags().StringVar(&ip, "ip", flagDefaults.ip, "IP address to include in CSR SAN")
 	cmd.Flags().StringVar(&oldRoleCertPath, "old-role-cert", "", "path to previous role cert PEM (sent as PrevCertNotBefore/NotAfter)")
 	cmd.Flags().BoolVar(&csrOnly, "csr", false, "print the generated CSR and exit")
-	cmd.Flags().IntVar(&expiryTime, "expiry-time", 0, "requested certificate lifetime in minutes (0 = server default)")
+	cmd.Flags().IntVar(&expiryTime, "expiry-time", flagDefaults.expiryTimeMinutes, "requested certificate lifetime in minutes (0 = server default)")
 	cmd.Flags().StringVar(&outPath, "out", "", "path to write the signed cert (default: stdout)")
 	cmd.Flags().StringVar(&proxyForPrincipal, "proxy-for-principal", "", "issue cert proxied on behalf of this principal")
-	cmd.Flags().BoolVar(&concatIntermediateCert, "concat-intermediate-cert", false, "append a CA bundle when the response does not include a certificate chain")
-	cmd.Flags().StringVar(&caCertBundleName, "cacert-bundle-name", "", "CA certificate bundle name used with --concat-intermediate-cert")
+	cmd.Flags().BoolVar(&concatIntermediateCert, "concat-intermediate-cert", flagDefaults.concatIntermediateCert, "append a CA bundle when the response does not include a certificate chain")
+	cmd.Flags().StringVar(&caCertBundleName, "cacert-bundle-name", flagDefaults.caCertBundleName, "CA certificate bundle name used with --concat-intermediate-cert")
+	cmd.Flags().StringVar(&signerKeyID, "signer-key-id", flagDefaults.signerKeyID, "ZTS certificate signer key id")
 	return cmd
 }
 

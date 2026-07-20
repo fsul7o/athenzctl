@@ -16,10 +16,19 @@ func TestSetContextIssueDefaultsAreIndependent(t *testing.T) {
 		"--servicecert-subj-o", "Service Org",
 		"--servicecert-spiffe=false",
 		"--servicecert-dns-domain", "service.example",
+		"--servicecert-concat-intermediate-cert",
+		"--servicecert-expiry-time", "5",
+		"--servicecert-ip", "10.1.1.1",
+		"--servicecert-signer-key-id", "svc-key",
 		"--rolecert-subj-c", "US",
 		"--rolecert-subj-o", "Role Org",
 		"--rolecert-spiffe",
 		"--rolecert-dns-domain", "role.example",
+		"--rolecert-concat-intermediate-cert",
+		"--rolecert-cacert-bundle-name", "athenz",
+		"--rolecert-expiry-time", "10",
+		"--rolecert-ip", "10.2.2.2",
+		"--rolecert-signer-key-id", "role-key",
 		"--insecure-skip-tls-verify",
 		"--proxy", "http://proxy.example:8080",
 	})
@@ -46,11 +55,23 @@ func TestSetContextIssueDefaultsAreIndependent(t *testing.T) {
 	if service.Spiffe == nil || *service.Spiffe {
 		t.Fatalf("servicecert spiffe=false was not saved: %+v", service)
 	}
+	if service.ConcatIntermediateCert == nil || !*service.ConcatIntermediateCert {
+		t.Fatalf("servicecert concat-intermediate-cert was not saved: %+v", service)
+	}
+	if service.ExpiryTimeMinutes != 5 || service.IP != "10.1.1.1" || service.SignerKeyID != "svc-key" {
+		t.Fatalf("unexpected servicecert cert-detail defaults: %+v", service)
+	}
 	if role.SubjectCountry != "US" || role.SubjectOrganization != "Role Org" || role.DNSDomain != "role.example" {
 		t.Fatalf("unexpected rolecert defaults: %+v", role)
 	}
 	if role.Spiffe == nil || !*role.Spiffe {
 		t.Fatalf("rolecert spiffe=true was not saved: %+v", role)
+	}
+	if role.ConcatIntermediateCert == nil || !*role.ConcatIntermediateCert || role.CACertBundleName != "athenz" {
+		t.Fatalf("rolecert concat-intermediate-cert/cacert-bundle-name were not saved: %+v", role)
+	}
+	if role.ExpiryTimeMinutes != 10 || role.IP != "10.2.2.2" || role.SignerKeyID != "role-key" {
+		t.Fatalf("unexpected rolecert cert-detail defaults: %+v", role)
 	}
 	if !context.InsecureSkipTLSVerify || context.ProxyURL != "http://proxy.example:8080" {
 		t.Fatalf("connection settings were not saved: %+v", context)

@@ -60,6 +60,10 @@ ZTS URL and mTLS credentials always come from the athenzctl context.`,
 			subjOU = defaults.subjectOrganizationalUnit
 			spiffe = defaults.spiffe
 			spiffeTrustDomain = defaults.spiffeTrustDomain
+			concatIntermediateCert = defaults.concatIntermediateCert
+			expiryTime = defaults.expiryTimeMinutes
+			ip = defaults.ip
+			signerKeyID = defaults.signerKeyID
 
 			domain, err := opts.RequireDomain()
 			if err != nil {
@@ -192,15 +196,15 @@ ZTS URL and mTLS credentials always come from the athenzctl context.`,
 	cmd.Flags().StringVar(&subjOU, "subj-ou", flagDefaults.subjectOrganizationalUnit, "CSR Subject OrganizationalUnit")
 	cmd.Flags().BoolVar(&spiffe, "spiffe", flagDefaults.spiffe, "include SPIFFE URI in CSR SAN")
 	cmd.Flags().StringVar(&spiffeTrustDomain, "spiffe-trust-domain", flagDefaults.spiffeTrustDomain, "SPIFFE trust domain")
-	cmd.Flags().StringVar(&ip, "ip", "", "IP address to include in CSR SAN")
+	cmd.Flags().StringVar(&ip, "ip", flagDefaults.ip, "IP address to include in CSR SAN")
 	cmd.Flags().StringVar(&attestationDataFile, "attestation-data", "", "attestation data file (for --provider registration)")
-	cmd.Flags().StringVar(&signerKeyID, "signer-key-id", "", "ZTS certificate signer key id")
-	cmd.Flags().IntVar(&expiryTime, "expiry-time", 0, "requested certificate lifetime in minutes (0 = server default)")
+	cmd.Flags().StringVar(&signerKeyID, "signer-key-id", flagDefaults.signerKeyID, "ZTS certificate signer key id")
+	cmd.Flags().IntVar(&expiryTime, "expiry-time", flagDefaults.expiryTimeMinutes, "requested certificate lifetime in minutes (0 = server default)")
 	cmd.Flags().StringVar(&outPath, "out", "", "path to write the signed cert (default: stdout)")
 	cmd.Flags().StringVar(&signerOutPath, "signer-cert-out", "", "path to write the signer CA cert if returned")
 	cmd.Flags().BoolVar(&csrOnly, "csr", false, "print the generated CSR and exit")
 	cmd.Flags().BoolVar(&useInstanceRegisterToken, "use-instance-register-token", false, "fetch an instance register token via the current context and use it as attestation data")
-	cmd.Flags().BoolVar(&concatIntermediateCert, "concat-intermediate-cert", false, "append the returned intermediate CA bundle to the certificate")
+	cmd.Flags().BoolVar(&concatIntermediateCert, "concat-intermediate-cert", flagDefaults.concatIntermediateCert, "append the returned intermediate CA bundle to the certificate")
 	return cmd
 }
 

@@ -43,7 +43,7 @@ Feature: athenzctl issue (ZTS credentials)
     And stdout should be a valid PEM certificate
 
   Scenario: generate a role certificate CSR with every CSR option
-    When I run athenzctl "issue rolecert --domain sys.auth --role-domain sys.auth --role-name admin --service e2e-svc --role-key-file $ADMIN_KEY --dns-domain athenz.cloud --subj-c JP --subj-p Tokyo --subj-o Example --subj-ou E2E --spiffe=false --spiffe-trust-domain example.test --ip 127.0.0.1 --old-role-cert $ADMIN_CERT --csr --expiry-time 5 --out $TEMP_DIR/role.cert.pem --proxy-for-principal user.athenz_admin --concat-intermediate-cert --cacert-bundle-name athenz"
+    When I run athenzctl "issue rolecert --domain sys.auth --role-domain sys.auth --role-name admin --service e2e-svc --role-key-file $ADMIN_KEY --dns-domain athenz.cloud --subj-c JP --subj-p Tokyo --subj-o Example --subj-ou E2E --spiffe=false --spiffe-trust-domain example.test --ip 127.0.0.1 --old-role-cert $ADMIN_CERT --csr --expiry-time 5 --out $TEMP_DIR/role.cert.pem --proxy-for-principal user.athenz_admin --concat-intermediate-cert --cacert-bundle-name athenz --signer-key-id 0"
     Then the command should succeed
     And stdout should contain "CERTIFICATE REQUEST"
 

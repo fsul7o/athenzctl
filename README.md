@@ -57,11 +57,20 @@ make build \
     ISSUE_DEFAULT_SERVICECERT_SUBJ_O='Example Inc.' \
     ISSUE_DEFAULT_SERVICECERT_SUBJ_OU=Services \
     ISSUE_DEFAULT_SERVICECERT_DNS_DOMAIN=athenz.example \
+    ISSUE_DEFAULT_SERVICECERT_CONCAT_INTERMEDIATE_CERT=true \
+    ISSUE_DEFAULT_SERVICECERT_EXPIRY_TIME=43200 \
+    ISSUE_DEFAULT_SERVICECERT_IP=10.0.0.1 \
+    ISSUE_DEFAULT_SERVICECERT_SIGNER_KEY_ID=0 \
     ISSUE_DEFAULT_ROLECERT_SUBJ_C=JP \
     ISSUE_DEFAULT_ROLECERT_SUBJ_P=Tokyo \
     ISSUE_DEFAULT_ROLECERT_SUBJ_O='Example Inc.' \
     ISSUE_DEFAULT_ROLECERT_SUBJ_OU=Roles \
-    ISSUE_DEFAULT_ROLECERT_DNS_DOMAIN=athenz.example
+    ISSUE_DEFAULT_ROLECERT_DNS_DOMAIN=athenz.example \
+    ISSUE_DEFAULT_ROLECERT_CONCAT_INTERMEDIATE_CERT=true \
+    ISSUE_DEFAULT_ROLECERT_CACERT_BUNDLE_NAME=athenz \
+    ISSUE_DEFAULT_ROLECERT_EXPIRY_TIME=43200 \
+    ISSUE_DEFAULT_ROLECERT_IP=10.0.0.1 \
+    ISSUE_DEFAULT_ROLECERT_SIGNER_KEY_ID=0
 ```
 
 The same values can be supplied to GoReleaser through the corresponding `ATHENZCTL_ISSUE_DEFAULT_*` environment variables. Service and role certificate defaults are independent. A context may override the embedded values under `issue-defaults.servicecert` and `issue-defaults.rolecert`, and an explicit command-line flag always has the highest priority.
@@ -79,6 +88,10 @@ contexts:
         subj-ou: Services
         spiffe: false
         dns-domain: athenz.example
+        concat-intermediate-cert: true
+        expiry-time: 43200
+        ip: 10.0.0.1
+        signer-key-id: "0"
       rolecert:
         subj-c: JP
         subj-p: Tokyo
@@ -86,9 +99,14 @@ contexts:
         subj-ou: Roles
         spiffe-trust-domain: spiffe.example
         dns-domain: athenz.example
+        concat-intermediate-cert: true
+        cacert-bundle-name: athenz
+        expiry-time: 43200
+        ip: 10.0.0.1
+        signer-key-id: "0"
 ```
 
-`dns-domain` can be omitted from an issue command when it is embedded in the binary or configured in the selected context. Otherwise it remains required. For an exceptional context-specific override, use the certificate-prefixed `config set-context` flags such as `--servicecert-subj-o` or `--rolecert-dns-domain`. The corresponding Province defaults are available as `--servicecert-subj-p` and `--rolecert-subj-p`.
+`dns-domain` can be omitted from an issue command when it is embedded in the binary or configured in the selected context. Otherwise it remains required. For an exceptional context-specific override, use the certificate-prefixed `config set-context` flags such as `--servicecert-subj-o` or `--rolecert-dns-domain`. The corresponding Province defaults are available as `--servicecert-subj-p` and `--rolecert-subj-p`. The remaining certificate-detail flags are configurable the same way: `--servicecert-concat-intermediate-cert`/`--rolecert-concat-intermediate-cert`, `--rolecert-cacert-bundle-name` (rolecert only), `--servicecert-expiry-time`/`--rolecert-expiry-time`, `--servicecert-ip`/`--rolecert-ip`, and `--servicecert-signer-key-id`/`--rolecert-signer-key-id`.
 
 ## Auth modes
 
