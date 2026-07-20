@@ -8,6 +8,14 @@
 
 ## Install
 
+Homebrew Cask:
+
+```sh
+brew install --cask fsul7o/athenzctl/athenzctl
+```
+
+Or install from source with Go:
+
 ```sh
 go install github.com/fsul7o/athenzctl/cmd/athenzctl@latest
 ```

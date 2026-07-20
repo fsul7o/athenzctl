@@ -58,8 +58,22 @@ archives:
       - goos: windows
         formats: [zip]
 
-checksum:
-  name_template: "checksums.txt"
-
 changelog:
   use: github
+
+# GoReleaser publishes the Cask to <owner>/<repository>, which is used as the
+# Homebrew tap repository.
+homebrew_casks:
+  - repository:
+      owner: "{{ .Env.HOMEBREW_TAP_OWNER }}"
+      name: "{{ .Env.HOMEBREW_TAP_REPOSITORY }}"
+      branch: main
+    name: athenzctl
+    directory: Casks
+    homepage: "https://github.com/{{ .Env.GITHUB_REPOSITORY }}"
+    description: "A kubectl-style command-line client for Athenz"
+    ids:
+      - athenzctl
+    binaries:
+      - athenzctl
+    skip_upload: auto

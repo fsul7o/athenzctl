@@ -33,3 +33,8 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          HOMEBREW_TAP_OWNER: ${{ github.repository_owner }}
+          HOMEBREW_TAP_REPOSITORY: ${{ github.event.repository.name }}
