@@ -3,6 +3,7 @@
 End-to-end tests run athenzctl subcommands in-process against a local Athenz stack from [ctyano/athenz-distribution](https://github.com/ctyano/athenz-distribution). Scenarios live in `test/e2e/features/*.feature` and run with [godog](https://github.com/cucumber/godog).
 
 Docker and Docker Compose are required. The generated context uses TLS server-name overrides, so no `/etc/hosts` edit is needed.
+The KinD cluster is named `athenzctl-e2e`; override it for local runs with `E2E_KIND_CLUSTER_NAME` if needed.
 
 ```sh
 make e2e-up    # clone and start the local stack; write .local/e2e/config.yaml

@@ -34,6 +34,7 @@ ATHENZ_DIST_DIR    := .local/athenz-distribution
 ATHENZ_DIST_REPO   := https://github.com/ctyano/athenz-distribution.git
 ATHENZ_DIST_PATCHES := $(wildcard $(PWD)/scripts/patches/athenz-distribution-*.patch)
 E2E_CONFIG         := $(PWD)/.local/e2e/config.yaml
+E2E_KIND_CLUSTER_NAME ?= athenzctl-e2e
 E2E_COVERAGE       ?= 1
 ifeq ($(strip $(CI)),)
 E2E_IMAGE_TARGETS  := deploy-kubernetes-in-docker load-docker-images load-kubernetes-images
@@ -79,7 +80,7 @@ e2e-clone:
 	done
 
 e2e-up: e2e-clone
-	$(MAKE) -C $(ATHENZ_DIST_DIR) \
+	$(MAKE) -C $(ATHENZ_DIST_DIR) KIND_CLUSTER_NAME=$(E2E_KIND_CLUSTER_NAME) \
 		$(E2E_IMAGE_TARGETS) \
 		deploy-kubernetes-crypki-softhsm use-kubernetes-crypki-softhsm \
 		deploy-kubernetes-athenz check-kubernetes-athenz deploy-kubernetes-athenz-oauth2
