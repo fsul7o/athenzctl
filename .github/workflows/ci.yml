@@ -56,7 +56,7 @@ jobs:
       - name: Set up KinD
         uses: helm/kind-action@v1
         with:
-          cluster_name: kind
+          cluster_name: athenzctl-e2e
 
       - name: Start Athenz test stack
         run: make e2e-up

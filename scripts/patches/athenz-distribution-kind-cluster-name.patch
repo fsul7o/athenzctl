@@ -1,0 +1,84 @@
+--- a/Makefile
++++ b/Makefile
+@@ -502,10 +502,10 @@ load-docker-images-external:
+ 	docker pull $(DOCKERIO_REGISTRY)/library/postgres:alpine
+ 
+ deploy-kubernetes-in-docker:
+-	@DOCKER_REGISTRY=$(DOCKER_REGISTRY) $(MAKE) -C kubernetes kind-setup
++	@DOCKER_REGISTRY=$(DOCKER_REGISTRY) $(MAKE) -C kubernetes KIND_CLUSTER_NAME=$(KIND_CLUSTER_NAME) kind-setup
+ 
+ load-kubernetes-images: version install-kustomize
+-	@DOCKER_REGISTRY=$(DOCKER_REGISTRY) $(MAKE) -C kubernetes kind-load-images
++	@DOCKER_REGISTRY=$(DOCKER_REGISTRY) $(MAKE) -C kubernetes KIND_CLUSTER_NAME=$(KIND_CLUSTER_NAME) kind-load-images
+ 
+ load-kubernetes-images-internal: version install-kustomize
+ 	@DOCKER_REGISTRY=$(DOCKER_REGISTRY) $(MAKE) -C kubernetes kind-load-images-internal
+--- a/kubernetes/Makefile
++++ b/kubernetes/Makefile
+@@ -4,6 +4,7 @@ ifeq ($(UNAME_S),Darwin)
+ 	SED_INPLACE = sed -i ''
+ endif
+ 
++KIND_CLUSTER_NAME ?= kind
+ ifeq ($(DOCKERIO_REGISTRY),)
+ DOCKERIO_REGISTRY=docker.io
+ endif
+@@ -162,7 +163,7 @@ switch-athenz-zts-cert-signer-vault: patch-athenz-zts-vault setup-vault-credentials
+ 
+ kind-setup:
+ 	#which kind && (kind delete cluster ||:; kind create cluster --config kind.yaml)
+-	which kind && (kind delete cluster ||:; kind create cluster)
++	which kind && (kind delete cluster --name $(KIND_CLUSTER_NAME) ||:; kind create cluster --name $(KIND_CLUSTER_NAME))
+ 
+ kind-load-images-check:
+ 	@# Check if Docker is using the problematic containerd-snapshotter
+@@ -177,10 +178,10 @@ kind-load-images-check:
+ 	else \
+ 		echo "Environment is correct. No driver change needed."; \
+ 	fi
+-	kubectl config get-contexts kind-kind --no-headers=true | grep -E "^\* +kind-kind"
++	kubectl config get-contexts kind-$(KIND_CLUSTER_NAME) --no-headers=true | grep -E "^\* +kind-$(KIND_CLUSTER_NAME)"
+ 
+ kind-load-images-internal: kind-load-images-check
+-	kind load docker-image \
++	kind load docker-image --name $(KIND_CLUSTER_NAME) \
+ 		$(DOCKER_REGISTRY)athenz-db:$(ATHENZ_IMAGE_TAG) \
+ 		$(DOCKER_REGISTRY)athenz-zms-server:$(ATHENZ_IMAGE_TAG) \
+ 		$(DOCKER_REGISTRY)athenz-zts-server:$(ATHENZ_IMAGE_TAG) \
+@@ -188,7 +189,7 @@ kind-load-images-internal: kind-load-images-check
+ 		$(DOCKER_REGISTRY)athenz-ui:$(ATHENZ_IMAGE_TAG)
+ 
+ kind-load-images-external: kind-load-images-check
+-	kind load docker-image \
++	kind load docker-image --name $(KIND_CLUSTER_NAME) \
+ 		$(DOCKER_REGISTRY_EXTERNAL)crypki-softhsm:latest \
+ 		$(DOCKER_REGISTRY_EXTERNAL)certsigner-envoy:latest \
+ 		$(DOCKER_REGISTRY_EXTERNAL)athenz-user-cert:latest \
+@@ -197,7 +198,7 @@ kind-load-images-external: kind-load-images-check
+ 		$(DOCKER_REGISTRY_EXTERNAL)athenz-plugins:latest
+ 
+ kind-load-images-thirdparty: kind-load-images-check
+-	kind load docker-image \
++	kind load docker-image --name $(KIND_CLUSTER_NAME) \
+ 		$(DOCKERIO_REGISTRY)/hashicorp/vault:latest \
+ 		$(DOCKERIO_REGISTRY)/ghostunnel/ghostunnel:latest \
+ 		$(DOCKERIO_REGISTRY)/ealen/echo-server:latest \
+@@ -212,15 +213,15 @@ kind-load-images-thirdparty: kind-load-images-check
+ 		$(DOCKERIO_REGISTRY)/dexidp/dex:latest \
+ 		$(QUAYIO_REGISTRY)/keycloak/keycloak:26.5.5
+ 	if [ "$$(uname -m)" = "aarch64" -o "$$(uname -m)" = "arm64" ]; then \
+-		kind load docker-image $(DOCKERIO_REGISTRY)/tatyano/authorization-proxy:latest; \
++		kind load docker-image --name $(KIND_CLUSTER_NAME) $(DOCKERIO_REGISTRY)/tatyano/authorization-proxy:latest; \
+ 	else \
+-		kind load docker-image $(DOCKERIO_REGISTRY)/athenz/authorization-proxy:latest; \
++		kind load docker-image --name $(KIND_CLUSTER_NAME) $(DOCKERIO_REGISTRY)/athenz/authorization-proxy:latest; \
+ 	fi
+ 
+ kind-load-images: kind-load-images-internal kind-load-images-external kind-load-images-thirdparty
+ 
+ kind-shutdown:
+-	kind delete cluster
++	kind delete cluster --name $(KIND_CLUSTER_NAME)
+ 
+ setup-crypki-softhsm:
+ 	@$(MAKE) -C crypki-softhsm setup-crypki-softhsm
