@@ -33,6 +33,14 @@ Feature: athenzctl get
     When I run athenzctl "get template instance_provider -o yaml"
     Then the command should succeed
 
+  Scenario: get all domains with confirmation bypass
+    When I run athenzctl "get domains --all --yes -o yaml"
+    Then the command should succeed
+    And stdout should be valid yaml
+    When I run athenzctl "get domains --all -y -o yaml"
+    Then the command should succeed
+    And stdout should be valid yaml
+
   Scenario: get membership with group and pending filters
     Given a group "readers" exists in domain "$DOMAIN"
     When I run athenzctl "create membership -d $DOMAIN --group readers --member user.groupmember"

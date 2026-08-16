@@ -76,8 +76,8 @@ athenzctl centralizes connection targets and credentials in a **kubeconfig-style
 | zms-cli command | athenzctl equivalent | Notes |
 |---|---|---|
 | `add-domain domain [product-id] [admin ...]` | `create domain NAME --admin-users a,b [--description D]` | Subdomains use `--parent`; user domains use `--user` |
-| `list-domain [prefix]` / `list-domain limit skip prefix depth` | `get domains` | Pagination (limit/skip/depth) is unsupported — always fetches everything |
-| `show-domain [domain]` / `show-domain-attrs` | `describe domain NAME` / `get domain-meta` | |
+| `list-domain [prefix]` / `list-domain limit skip prefix depth` | `get domains [--all]` | Default retrieves one ZMS page; `--all` follows pagination after confirmation (prefix/limit/depth filters remain unsupported) |
+| `show-domain [domain]` / `show-domain-attrs` | `describe domain NAME` / `get domain-meta` | `describe domain` returns aggregate DomainData including roles, groups, policies, services, and entities; `get domain` remains a concise view |
 | `delete-domain domain` | `delete domain NAME [--parent P]` | User domains use `delete domain --user U` |
 | `disable-domain` / `enable-domain` | `patch domain-meta NAME enabled=false/true` | |
 | `check-domain` | No equivalent | Domain validation feature |

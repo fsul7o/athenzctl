@@ -1,8 +1,9 @@
 // Package describe implements the `athenzctl describe` verb. By default
 // it renders every field returned by ZMS in a human-readable indented
 // tree; `-o yaml` and `-o json` emit the raw response in those formats.
-// The pretty renderer discovers fields via JSON marshaling, so new
-// upstream fields surface automatically.
+// The domain resource is returned as DomainData, including its roles,
+// groups, policies, services, and entities. The pretty renderer discovers
+// fields via JSON marshaling, so new upstream fields surface automatically.
 package describe
 
 import (
