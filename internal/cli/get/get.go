@@ -3,6 +3,7 @@ package get
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -14,7 +15,7 @@ import (
 func New(opts *cliopts.Options) *cobra.Command {
 	kindFlags := cliopts.KindFlagSpec{
 		ByKind: map[resource.Kind][]string{
-			resource.KindDomain:         {},
+			resource.KindDomain:         {"all", "yes"},
 			resource.KindDomainMeta:     {},
 			resource.KindRole:           {},
 			resource.KindRoleMeta:       {},
@@ -48,6 +49,9 @@ membership(s), template(s), domain-template(s), quota.`,
 			if err := cliopts.ValidateKindFlags(cmd, "get", kind, kindFlags); err != nil {
 				return err
 			}
+			if kind == resource.KindDomain && len(args) == 1 && strings.EqualFold(args[0], "domain") {
+				return fmt.Errorf("get domain requires NAME; use `get domains` to list domains")
+			}
 			format, err := opts.Format()
 			if err != nil {
 				return err
@@ -68,7 +72,9 @@ membership(s), template(s), domain-template(s), quota.`,
 
 			switch kind {
 			case resource.KindDomain:
-				return getDomain(out, zc, name, format)
+				all, _ := cmd.Flags().GetBool("all")
+				yes, _ := cmd.Flags().GetBool("yes")
+				return getDomain(cmd, out, zc, name, format, all, yes)
 			case resource.KindDomainMeta:
 				return getDomainMeta(out, zc, domain, format)
 			case resource.KindRole:
@@ -104,6 +110,8 @@ membership(s), template(s), domain-template(s), quota.`,
 	cmd.Flags().String("group", "", "group name to query (only for KIND=membership)")
 	cmd.Flags().Bool("pending", false, "list pending membership requests in the current domain (only for KIND=membership)")
 	cmd.Flags().String("principal", "", "filter pending membership by approving principal (only with --pending)")
+	cmd.Flags().Bool("all", false, "retrieve all domains, following pagination (only for KIND=domains)")
+	cmd.Flags().BoolP("yes", "y", false, "skip the confirmation prompt for --all")
 	cliopts.SetKindAwareHelp(cmd, kindFlags)
 	return cmd
 }
