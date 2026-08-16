@@ -54,6 +54,12 @@ KEY="${OUT_DIR}/keys/athenz_admin.private.pem"
 mkdir -p "${OUT_DIR}/exec-local"
 EXEC_CERT="${OUT_DIR}/exec-local/user.cert.pem"
 EXEC_KEY="${OUT_DIR}/exec-local/user.key.pem"
+# Keep the broken context's cache separate. Exec auth reuses a valid cached
+# credential and would otherwise bypass the intentionally missing command.
+mkdir -p "${OUT_DIR}/exec-broken"
+BROKEN_EXEC_CERT="${OUT_DIR}/exec-broken/user.cert.pem"
+BROKEN_EXEC_KEY="${OUT_DIR}/exec-broken/user.key.pem"
+rm -f "${BROKEN_EXEC_CERT}" "${BROKEN_EXEC_KEY}"
 
 # Local ports for the KinD services.
 ZMS_LOCAL_PORT=4443
@@ -166,8 +172,8 @@ contexts:
     auth-mode: exec
     exec:
       command: /nonexistent/athenzusercert
-      cert-path: ${EXEC_CERT}
-      key-path: ${EXEC_KEY}
+      cert-path: ${BROKEN_EXEC_CERT}
+      key-path: ${BROKEN_EXEC_KEY}
 EOF
 chmod 600 "${OUT_DIR}/config.yaml"
 

@@ -31,7 +31,7 @@ Select the context with `athenzctl config use-context prod`; this adds `current-
 
 ## exec
 
-The `exec` mode runs an external command before each ZMS or ZTS request. The command must write a fresh certificate and key to configured paths; athenzctl then reads those files. This supports external credential tools and interactive login flows without athenzctl implementing them.
+The `exec` mode uses the certificate and key at the configured paths while the certificate is currently valid and matches the key. If the files are missing, invalid, or the certificate is outside its validity period, athenzctl runs the external command to refresh them, then reads the updated files. This supports external credential tools and interactive login flows without athenzctl implementing them.
 
 ```sh
 athenzctl config set-context prod-usercert \
@@ -60,7 +60,7 @@ contexts:
         key-path: /path/to/.athenz/user.key.pem
 ```
 
-`--exec-arg` and `--exec-env KEY=VALUE` are repeatable and order-preserving. The external command's standard output and error are passed through, and the command is run on every invocation.
+`--exec-arg` and `--exec-env KEY=VALUE` are repeatable and order-preserving. The external command's standard output and error are passed through, and the command is run only when the configured credential cannot be reused.
 
 ## ntoken
 

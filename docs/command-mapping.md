@@ -37,7 +37,7 @@ athenzctl centralizes connection targets and credentials in a **kubeconfig-style
 | zms-cli: `-c cacert_file`; each zts tool: `-cacert`/`-svc-cacert-file` | `config set-context --ca-cert` |
 | zms-cli: `-k` / `-s host:port` | `-k`/`--insecure-skip-tls-verify` and `-s`/`--proxy`; persist with `config set-context --insecure-skip-tls-verify` / `--proxy`. Applies to ZMS and ZTS; bare `host:port` is SOCKS5 and `socks5://`, `http://`, and `https://` URLs are supported |
 | zms-cli: `-f ntoken_file` / `-i identity` (NToken auth); each zts tool: `-ntoken-file` | **Out of scope** (athenzctl only supports mTLS or `auth-mode: exec`; NToken and legacy role-token issuance are not supported — see README) |
-| (none) | `config set-context --auth-mode exec --exec-command ... --exec-arg ... --exec-env ... --exec-cert-path ... --exec-key-path ...` (obtains a fresh certificate via an external command each invocation; intended to pair with tools like `ctyano/athenz-user-cert`) |
+| (none) | `config set-context --auth-mode exec --exec-command ... --exec-arg ... --exec-env ... --exec-cert-path ... --exec-key-path ...` (reuses a currently valid certificate, or obtains one via an external command when refresh is needed; intended to pair with tools like `ctyano/athenz-user-cert`) |
 | (none) | `config set-context --zms-server-name`/`--zts-server-name` (TLS SNI/verification-name override; used e.g. for local e2e) |
 | Switching between multiple contexts (no such concept in the legacy tools) | `config use-context` / `config get-contexts` / `config current-context` / `config delete-context` / `config view` |
 
@@ -364,7 +364,7 @@ athenzctl is in "early development (pre-v0.1)"; the following are currently clea
 Conversely, features athenzctl adds that have no equivalent in the legacy tool set:
 
 - **Unified context management** (the `config` command group): switch between multiple environments kubeconfig-style.
-- **`auth-mode: exec`**: obtain a fresh certificate on the spot via an external command (intended to pair with OIDC-login-style wrapper tools).
+- **`auth-mode: exec`**: reuse a currently valid certificate or obtain a refreshed certificate via an external command (intended to pair with OIDC-login-style wrapper tools).
 - **`issue instance-register-token`**: instance-register-token retrieval as its own command.
 - **`--p1363`** (`fetch signedpolicy`): explicit choice of signature format.
 - **`patch` command**: alongside `edit` (interactive YAML editing), provides a scriptable, non-interactive `FIELD=VALUE` patch — a generalization of zms-cli's large set of `set-*` commands.
