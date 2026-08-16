@@ -1,8 +1,7 @@
 // Package client builds authenticated ZMS/ZTS clients from an athenzctl
-// context. mTLS is the primary auth; contexts with auth-mode: "exec" obtain
-// their client cert/key by execing an external command that places them at
-// a configured path, then reading the result back, before building the mTLS
-// config.
+// context. mTLS is the primary auth; contexts with auth-mode: "exec" reuse a
+// currently usable client cert/key from configured paths and exec an external
+// command to refresh them when needed, before building the mTLS config.
 package client
 
 import (

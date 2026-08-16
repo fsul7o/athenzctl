@@ -121,8 +121,8 @@ type CertificateDefaults struct {
 // X.509 certificate + key at fixed file paths — the common pattern for
 // Athenz-ecosystem credential tools (e.g. ctyano/athenz-user-cert), which
 // write cert/key files rather than emitting structured output. athenzctl
-// execs Command with Args/Env, and once it exits successfully, reads the
-// certificate and key PEM from CertPath/KeyPath.
+// reuses a currently usable credential from CertPath/KeyPath and otherwise
+// execs Command with Args/Env before reading the refreshed PEM files.
 type ExecConfig struct {
 	Command  string            `yaml:"command"`
 	Args     []string          `yaml:"args,omitempty"`
